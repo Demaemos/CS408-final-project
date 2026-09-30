@@ -1,1 +1,16 @@
-// The systemd unit that starts your app on boot and restarts it if it crashes
+[Unit]
+Description=LCG Spring Boot Application
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/lcg
+ExecStart=/usr/bin/java -jar /opt/lcg/app.jar
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=lcg-app
+
+[Install]
+WantedBy=multi-user.target
