@@ -36,7 +36,7 @@ fi
 echo "    Built: ${JAR_PATH}"
  
 echo "==> Copying jar to the server..."
-rsync -avz -e "ssh -i ${KEY} -o StrictHostKeyChecking=accept-new" \
+scp -i "${KEY}" -o StrictHostKeyChecking=accept-new \
   "${JAR_PATH}" "${REMOTE_USER}@${HOST}:${REMOTE_DIR}/app.jar.new"
  
 echo "==> Swapping in the new jar and restarting the service on the server..."
@@ -47,13 +47,20 @@ sudo systemctl restart LCG
 REMOTE
  
 echo "==> Waiting for the app to come up..."
-sleep 5
+HEALTH_OK="false"
+for i in $(seq 1 15); do
+  if curl -fsS "http://${HOST}/api/health" >/dev/null 2>&1; then
+    HEALTH_OK="true"
+    break
+  fi
+  sleep 2
+done
  
 echo "==> Health check..."
-if curl -fsS "http://${HOST}/api/health" >/dev/null; then
+if [ "${HEALTH_OK}" = "true" ]; then
   echo "==> Deploy succeeded: http://${HOST}/"
 else
-  echo "ERROR: health check failed at http://${HOST}/api/health"
+  echo "ERROR: health check failed at http://${HOST}/api/health after 30s"
   echo "       Check: ssh -i ${KEY} ${REMOTE_USER}@${HOST} 'journalctl -u LCG -n 50'"
   exit 1
 fi
