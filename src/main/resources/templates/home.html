@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Home')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+ 
+<header class="bg-primary text-white text-center py-5">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Loose Cannon Games</h1>
+        <p class="lead">Independent studio. Original worlds. Games for everyone.</p>
+        <a href="/games" class="btn btn-light btn-lg">See What's Coming</a>
+    </div>
+</header>
+ 
+<section class="container my-5">
+    <h2 class="mb-4">Coming Soon</h2>
+    <p class="text-muted">Our first games are in development &mdash; details and names will be announced as development progresses.</p>
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Untitled Project One</h5>
+                    <p class="card-text text-muted">Coming soon</p>
+                    <p class="card-text">Details to be revealed.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Untitled Project Two</h5>
+                    <p class="card-text text-muted">Coming soon</p>
+                    <p class="card-text">Details to be revealed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+ 
+<section class="container my-5">
+    <h2 class="mb-4">Latest News</h2>
+    <ul class="list-group">
+        <li class="list-group-item">Welcome to the new Loose Cannon Games site &mdash; more updates soon.</li>
+    </ul>
+</section>
+ 
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
+ 
