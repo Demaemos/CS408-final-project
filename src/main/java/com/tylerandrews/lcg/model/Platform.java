@@ -1,4 +1,4 @@
-package com.tylerandrews.lcg;
+package com.tylerandrews.lcg.model;
  
 import jakarta.persistence.*;
 import java.util.HashSet;
