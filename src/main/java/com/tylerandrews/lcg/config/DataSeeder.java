@@ -16,7 +16,7 @@ import java.util.List;
 // generically as "Coming Soon" with no names/lore committed yet.
 @Component
 public class DataSeeder implements CommandLineRunner {
- 
+
     private final GenreRepository genreRepository;
     private final PlatformRepository platformRepository;
     private final GameRepository gameRepository;
