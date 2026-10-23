@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Games')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <h1 class="mb-4">Our Games</h1>
+
+    <form method="get" th:action="@{/games}" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="keyword" class="form-label">Search</label>
+            <input type="text" id="keyword" name="keyword" class="form-control"
+                   placeholder="Title or keyword" th:value="${keyword}">
+        </div>
+
+        <div class="col-md-2">
+            <label for="genre" class="form-label">Genre</label>
+            <select id="genre" name="genre" class="form-select">
+                <option value="">All genres</option>
+                <option th:each="g : ${genres}" th:value="${g.id}" th:text="${g.name}"
+                        th:selected="${g.id == selectedGenre}">Action</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label for="platform" class="form-label">Platform</label>
+            <select id="platform" name="platform" class="form-select">
+                <option value="">All platforms</option>
+                <option th:each="p : ${platforms}" th:value="${p.id}" th:text="${p.name}"
+                        th:selected="${p.id == selectedPlatform}">PC</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <label for="status" class="form-label">Status</label>
+            <select id="status" name="status" class="form-select">
+                <option value="">Any status</option>
+                <option th:each="s : ${statuses}" th:value="${s.name()}" th:text="${s.label}"
+                        th:selected="${s == selectedStatus}">Announced</option>
+            </select>
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a th:href="@{/games}" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+
+    <p class="text-muted"
+       th:text="${#lists.size(games)} + (${#lists.size(games)} == 1 ? ' game found' : ' games found')">0 games found</p>
+
+    <div th:if="${#lists.isEmpty(games)}" class="alert alert-info">
+        No games match your search. Try clearing a filter.
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4" th:each="game : ${games}">
+            <div class="card h-100">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title" th:text="${game.title}">Title</h5>
+                    <p class="card-subtitle mb-2 text-muted" th:text="${game.tagline}">Tagline</p>
+
+                    <div class="mb-2">
+                        <span class="badge"
+                              th:classappend="${game.releaseStatus.name() == 'RELEASED'} ? 'bg-success' : (${game.releaseStatus.name() == 'IN_DEV'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                              th:text="${game.releaseStatus.label}">Status</span>
+                        <span class="badge bg-dark" th:if="${game.esrbRating != null}"
+                              th:text="'ESRB ' + ${game.esrbRating}">ESRB</span>
+                    </div>
+
+                    <p class="card-text small mb-1" th:if="${!game.genres.isEmpty()}">
+                        <strong>Genres:</strong>
+                        <span th:text="${#strings.listJoin(#lists.sort(game.genres.![name]), ', ')}">Action</span>
+                    </p>
+                    <p class="card-text small" th:if="${!game.platforms.isEmpty()}">
+                        <strong>Platforms:</strong>
+                        <span th:text="${#strings.listJoin(#lists.sort(game.platforms.![name]), ', ')}">PC</span>
+                    </p>
+
+                    <a class="btn btn-outline-primary mt-auto" th:href="@{/games/{slug}(slug=${game.slug})}">View details</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

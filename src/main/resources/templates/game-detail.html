@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title=${game.title})}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <a th:href="@{/games}" class="text-decoration-none">&larr; All games</a>
+
+    <div class="row mt-3 g-4">
+        <div class="col-lg-8">
+            <h1 th:text="${game.title}">Game Title</h1>
+            <p class="lead text-muted" th:text="${game.tagline}">Tagline</p>
+
+            <div class="mb-3">
+                <span class="badge"
+                      th:classappend="${game.releaseStatus.name() == 'RELEASED'} ? 'bg-success' : (${game.releaseStatus.name() == 'IN_DEV'} ? 'bg-warning text-dark' : 'bg-secondary')"
+                      th:text="${game.releaseStatus.label}">Status</span>
+                <span class="badge bg-dark" th:if="${game.esrbRating != null}"
+                      th:text="'ESRB ' + ${game.esrbRating}">ESRB</span>
+            </div>
+
+            <div class="bg-secondary-subtle rounded p-5 text-center text-muted mb-4">
+                Artwork and trailer coming soon
+            </div>
+
+            <h2 class="h4">About this game</h2>
+            <p th:text="${game.description}">Description</p>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="h5 card-title">Game facts</h2>
+                    <dl class="mb-0">
+                        <dt>Status</dt>
+                        <dd th:text="${game.releaseStatus.label}">Announced</dd>
+
+                        <dt>Release date</dt>
+                        <dd th:text="${game.releaseDate != null} ? ${game.releaseDate} : 'TBA'">TBA</dd>
+
+                        <dt>Genres</dt>
+                        <dd th:text="${game.genres.isEmpty()} ? '&mdash;' : ${#strings.listJoin(#lists.sort(game.genres.![name]), ', ')}">Action</dd>
+
+                        <dt>Platforms</dt>
+                        <dd th:text="${game.platforms.isEmpty()} ? '&mdash;' : ${#strings.listJoin(#lists.sort(game.platforms.![name]), ', ')}">PC</dd>
+
+                        <dt>Rating</dt>
+                        <dd class="mb-0" th:text="${game.esrbRating != null} ? ${game.esrbRating} : 'Not yet rated'">E10+</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

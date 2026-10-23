@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='About')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <h1 class="mb-3">About Loose Cannon Games</h1>
+    <p class="lead">Independent studio. Original worlds. Games for everyone.</p>
+    <p>
+        Loose Cannon Games is an independent game studio making original games for players of all ages.
+        Our first projects are in development, and we share news and progress as we go.
+    </p>
+
+    <h2 class="mt-5 mb-4">Meet the Team</h2>
+
+    <p class="text-muted" th:if="${#lists.isEmpty(team)}">Team members coming soon.</p>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-lg-4" th:each="member : ${team}">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title" th:text="${member.name}">Name</h5>
+                    <p class="card-subtitle mb-2 text-muted" th:text="${member.roleTitle}">Role</p>
+                    <p class="card-text" th:text="${member.bio}">Bio</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
