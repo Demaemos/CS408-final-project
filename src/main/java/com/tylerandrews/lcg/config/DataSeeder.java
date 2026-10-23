@@ -4,89 +4,81 @@ import com.tylerandrews.lcg.model.*;
 import com.tylerandrews.lcg.repository.*;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
- 
+
 import java.util.List;
- 
+
 // Seeds starter data through JPA repositories after the full application
-// context (and schema) is guaranteed to exist. This avoids the data.sql /
-// defer-datasource-initialization ordering problem entirely, since a
-// CommandLineRunner always runs after the context has fully started.
+// context (and schema) exists. Safe to run repeatedly: every insert checks
+// for an existing row first.
 //
 // Game titles are placeholders: the proposal describes the studio's games
 // generically as "Coming Soon" with no names/lore committed yet.
 @Component
 public class DataSeeder implements CommandLineRunner {
 
+    private static final String PLACEHOLDER_DESCRIPTION =
+        "Details to be revealed as development progresses.";
+
     private final GenreRepository genreRepository;
     private final PlatformRepository platformRepository;
     private final GameRepository gameRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final JobPostingRepository jobPostingRepository;
- 
+
     public DataSeeder(GenreRepository genreRepository,
-                       PlatformRepository platformRepository,
-                       GameRepository gameRepository,
-                       TeamMemberRepository teamMemberRepository,
-                       JobPostingRepository jobPostingRepository) {
+                      PlatformRepository platformRepository,
+                      GameRepository gameRepository,
+                      TeamMemberRepository teamMemberRepository,
+                      JobPostingRepository jobPostingRepository) {
         this.genreRepository = genreRepository;
         this.platformRepository = platformRepository;
         this.gameRepository = gameRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.jobPostingRepository = jobPostingRepository;
     }
- 
+
     @Override
     public void run(String... args) {
-        if (genreRepository.count() == 0) {
-            genreRepository.saveAll(List.of(
-                new Genre("Action"), new Genre("Adventure"),
-                new Genre("Puzzle"), new Genre("Platformer")));
+        // Lookup values first, so they exist even if no game uses them yet.
+        for (String name : List.of("Action", "Adventure", "Puzzle", "Platformer")) {
+            genre(name);
         }
- 
-        if (platformRepository.count() == 0) {
-            platformRepository.saveAll(List.of(
-                new Platform("PC"), new Platform("PlayStation"),
-                new Platform("Xbox"), new Platform("Switch")));
+        for (String name : List.of("PC", "PlayStation", "Xbox", "Switch")) {
+            platform(name);
         }
- 
-        if (!gameRepository.existsBySlug("untitled-project-one")) {
-            Game g1 = new Game();
-            g1.setTitle("Untitled Project One");
-            g1.setSlug("untitled-project-one");
-            g1.setTagline("Coming soon.");
-            g1.setDescription("Details to be revealed as development progresses.");
-            g1.setReleaseStatus(Game.ReleaseStatus.ANNOUNCED);
-            g1.setEsrbRating("E10+");
-            gameRepository.save(g1);
-        }
- 
-        if (!gameRepository.existsBySlug("untitled-project-two")) {
-            Game g2 = new Game();
-            g2.setTitle("Untitled Project Two");
-            g2.setSlug("untitled-project-two");
-            g2.setTagline("Coming soon.");
-            g2.setDescription("Details to be revealed as development progresses.");
-            g2.setReleaseStatus(Game.ReleaseStatus.ANNOUNCED);
-            g2.setEsrbRating("E");
-            gameRepository.save(g2);
-        }
- 
+
+        seedGame("Untitled Project One", "untitled-project-one", "Coming soon.",
+            Game.ReleaseStatus.ANNOUNCED, "E10+",
+            List.of("Action", "Adventure"), List.of("PC", "PlayStation", "Xbox"));
+
+        seedGame("Untitled Project Two", "untitled-project-two", "Coming soon.",
+            Game.ReleaseStatus.IN_DEV, "E",
+            List.of("Puzzle"), List.of("PC", "Switch"));
+
+        seedGame("Untitled Project Three", "untitled-project-three", "Coming soon.",
+            Game.ReleaseStatus.ANNOUNCED, "T",
+            List.of("Action", "Platformer"), List.of("PC", "Xbox", "Switch"));
+
+        seedGame("Untitled Project Four", "untitled-project-four", "Coming soon.",
+            Game.ReleaseStatus.IN_DEV, "E10+",
+            List.of("Adventure", "Puzzle"), List.of("PC", "PlayStation"));
+
         if (teamMemberRepository.count() == 0) {
             TeamMember t1 = new TeamMember();
             t1.setName("Alex Rivera");
             t1.setRoleTitle("Founder & Creative Director");
             t1.setBio("Started Loose Cannon Games to make original, all-ages worlds.");
             t1.setSortOrder(1);
- 
+
             TeamMember t2 = new TeamMember();
             t2.setName("Sam Park");
             t2.setRoleTitle("Lead Engineer");
             t2.setBio("Builds the systems that hold everything together.");
             t2.setSortOrder(2);
- 
+
             teamMemberRepository.saveAll(List.of(t1, t2));
         }
- 
+
         if (jobPostingRepository.count() == 0) {
             JobPosting job = new JobPosting();
             job.setTitle("Gameplay Engineer");
@@ -98,5 +90,36 @@ public class DataSeeder implements CommandLineRunner {
             jobPostingRepository.save(job);
         }
     }
+
+    private Genre genre(String name) {
+        return genreRepository.findByName(name)
+            .orElseGet(() -> genreRepository.save(new Genre(name)));
+    }
+
+    private Platform platform(String name) {
+        return platformRepository.findByName(name)
+            .orElseGet(() -> platformRepository.save(new Platform(name)));
+    }
+
+    private void seedGame(String title, String slug, String tagline,
+                          Game.ReleaseStatus status, String esrbRating,
+                          List<String> genreNames, List<String> platformNames) {
+        if (gameRepository.existsBySlug(slug)) {
+            return;
+        }
+        Game game = new Game();
+        game.setTitle(title);
+        game.setSlug(slug);
+        game.setTagline(tagline);
+        game.setDescription(PLACEHOLDER_DESCRIPTION);
+        game.setReleaseStatus(status);
+        game.setEsrbRating(esrbRating);
+        for (String name : genreNames) {
+            game.getGenres().add(genre(name));
+        }
+        for (String name : platformNames) {
+            game.getPlatforms().add(platform(name));
+        }
+        gameRepository.save(game);
+    }
 }
- 

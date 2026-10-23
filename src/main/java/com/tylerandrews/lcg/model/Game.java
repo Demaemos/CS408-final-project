@@ -9,7 +9,21 @@ import java.util.Set;
 @Table(name = "games")
 public class Game {
  
-    public enum ReleaseStatus { ANNOUNCED, IN_DEV, RELEASED }
+    public enum ReleaseStatus { 
+        ANNOUNCED("Announced"), 
+        IN_DEV("In Development"), 
+        RELEASED("Released");
+
+        private final String label;
+
+        ReleaseStatus(String label) {
+            this.label = label;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+    }
  
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
