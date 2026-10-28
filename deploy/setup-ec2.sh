@@ -30,6 +30,8 @@ if [ ! -f "${ENV_DIR}/app.env" ]; then
 SPRING_PROFILES_ACTIVE=prod
 EOF
 fi
+chown root:root "${ENV_DIR}/app.env"
+chmod 600 "${ENV_DIR}/app.env"
  
 echo "==> Installing systemd service..."
 cp "${SERVICE_SRC}" "${SERVICE_DEST}"

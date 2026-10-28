@@ -38,10 +38,15 @@ echo "    Built: ${JAR_PATH}"
 echo "==> Copying jar to the server..."
 scp -i "${KEY}" -o StrictHostKeyChecking=accept-new \
   "${JAR_PATH}" "${REMOTE_USER}@${HOST}:${REMOTE_DIR}/app.jar.new"
+scp -i "${KEY}" -o StrictHostKeyChecking=accept-new \
+  deploy/LCG.service "${REMOTE_USER}@${HOST}:${REMOTE_DIR}/LCG.service.new"
  
 echo "==> Swapping in the new jar and restarting the service on the server..."
 ssh -i "${KEY}" -o StrictHostKeyChecking=accept-new "${REMOTE_USER}@${HOST}" bash -s <<'REMOTE'
 set -euo pipefail
+sudo install -o root -g root -m 644 /opt/lcg/LCG.service.new /etc/systemd/system/LCG.service
+rm /opt/lcg/LCG.service.new
+sudo systemctl daemon-reload
 sudo mv /opt/lcg/app.jar.new /opt/lcg/app.jar
 sudo systemctl restart LCG
 REMOTE

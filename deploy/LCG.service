@@ -5,6 +5,7 @@ After=network.target
 [Service]
 User=ubuntu
 WorkingDirectory=/opt/lcg
+EnvironmentFile=/etc/lcg/app.env
 ExecStart=/usr/bin/java -jar /opt/lcg/app.jar
 Restart=always
 RestartSec=10
