@@ -12,8 +12,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.HashSet;
 
 @Service
 public class GameService {
@@ -67,6 +70,33 @@ public class GameService {
 
     public Optional<Game> findBySlug(String slug) {
         return gameRepository.findBySlug(slug);
+    }
+
+    public Optional<Game> findById(Long id) {
+        return gameRepository.findById(id);
+    }
+
+    public List<Game> allGames() {
+        return gameRepository.findAll(Sort.by("title"));
+    }
+
+    public Game save(Game game, Collection<Long> genreIds, Collection<Long> platformIds) {
+        Set<Long> requestedGenreIds = new HashSet<>(genreIds);
+        Set<Long> requestedPlatformIds = new HashSet<>(platformIds);
+        List<Genre> genres = genreRepository.findAllById(requestedGenreIds);
+        List<Platform> platforms = platformRepository.findAllById(requestedPlatformIds);
+        if (genres.size() != requestedGenreIds.size() || platforms.size() != requestedPlatformIds.size()) {
+            throw new IllegalArgumentException("One or more selected genres or platforms do not exist.");
+        }
+        game.getGenres().clear();
+        game.getGenres().addAll(genres);
+        game.getPlatforms().clear();
+        game.getPlatforms().addAll(platforms);
+        return gameRepository.save(game);
+    }
+
+    public void delete(Game game) {
+        gameRepository.delete(game);
     }
 
     public List<Genre> genres() {

@@ -2,6 +2,8 @@ package com.tylerandrews.lcg.config;
 
 import com.tylerandrews.lcg.model.*;
 import com.tylerandrews.lcg.repository.*;
+import com.tylerandrews.lcg.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,10 @@ import java.util.List;
 //
 // Game titles are placeholders: the proposal describes the studio's games
 // generically as "Coming Soon" with no names/lore committed yet.
+//
+// An admin account is created only when lcg.admin.password is set:
+//  - dev profile (./start.sh): application-dev.properties sets a throwaway password
+//  - production: set LCG_ADMIN_PASSWORD in /etc/lcg/app.env on the server
 @Component
 public class DataSeeder implements CommandLineRunner {
 
@@ -24,17 +30,26 @@ public class DataSeeder implements CommandLineRunner {
     private final GameRepository gameRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final JobPostingRepository jobPostingRepository;
+    private final UserService userService;
+    private final String adminUsername;
+    private final String adminPassword;
 
     public DataSeeder(GenreRepository genreRepository,
                       PlatformRepository platformRepository,
                       GameRepository gameRepository,
                       TeamMemberRepository teamMemberRepository,
-                      JobPostingRepository jobPostingRepository) {
+                      JobPostingRepository jobPostingRepository,
+                      UserService userService,
+                      @Value("${lcg.admin.username:admin}") String adminUsername,
+                      @Value("${lcg.admin.password:}") String adminPassword) {
         this.genreRepository = genreRepository;
         this.platformRepository = platformRepository;
         this.gameRepository = gameRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.jobPostingRepository = jobPostingRepository;
+        this.userService = userService;
+        this.adminUsername = adminUsername;
+        this.adminPassword = adminPassword;
     }
 
     @Override
@@ -88,6 +103,10 @@ public class DataSeeder implements CommandLineRunner {
             job.setRequirements("2+ years of game development experience.");
             job.setOpen(true);
             jobPostingRepository.save(job);
+        }
+
+        if (!adminPassword.isBlank() && !userService.usernameTaken(adminUsername, null)) {
+            userService.createAdmin(adminUsername, adminUsername + "@loosecannongames.example", adminPassword);
         }
     }
 
