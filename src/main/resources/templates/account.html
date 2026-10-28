@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Account')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5" style="max-width: 720px;">
+    <h1 class="mb-4">Account</h1>
+
+    <div class="alert alert-success" th:if="${message != null}" th:text="${message}">Saved.</div>
+
+    <!-- ===== Logged out: login / register tabs ===== -->
+    <div th:if="${user == null}">
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" th:classappend="${activeTab == 'login'} ? 'active'"
+                        id="login-tab" data-bs-toggle="tab" data-bs-target="#login-pane"
+                        type="button" role="tab">Log in</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" th:classappend="${activeTab == 'register'} ? 'active'"
+                        id="register-tab" data-bs-toggle="tab" data-bs-target="#register-pane"
+                        type="button" role="tab">Register</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Log in -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'login'} ? 'show active'"
+                 id="login-pane" role="tabpanel">
+                <form th:action="@{/login}" th:object="${loginForm}" method="post" novalidate>
+                    <div class="alert alert-danger" th:if="${#fields.hasGlobalErrors()}" th:errors="*{global}">Error</div>
+
+                    <div class="mb-3">
+                        <label for="login-id" class="form-label">Username or email</label>
+                        <input type="text" id="login-id" class="form-control" th:field="*{usernameOrEmail}"
+                               th:errorclass="is-invalid" autocomplete="username">
+                        <div class="invalid-feedback" th:errors="*{usernameOrEmail}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="login-password" class="form-label">Password</label>
+                        <input type="password" id="login-password" class="form-control" th:field="*{password}"
+                               th:errorclass="is-invalid" autocomplete="current-password">
+                        <div class="invalid-feedback" th:errors="*{password}">Error</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Log in</button>
+                </form>
+            </div>
+
+            <!-- Register -->
+            <div class="tab-pane fade" th:classappend="${activeTab == 'register'} ? 'show active'"
+                 id="register-pane" role="tabpanel">
+                <form th:action="@{/register}" th:object="${registerForm}" method="post" novalidate>
+                    <div class="mb-3">
+                        <label for="reg-username" class="form-label">Username</label>
+                        <input type="text" id="reg-username" class="form-control" th:field="*{username}"
+                               th:errorclass="is-invalid" autocomplete="username">
+                        <div class="invalid-feedback" th:errors="*{username}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-email" class="form-label">Email</label>
+                        <input type="email" id="reg-email" class="form-control" th:field="*{email}"
+                               th:errorclass="is-invalid" autocomplete="email">
+                        <div class="invalid-feedback" th:errors="*{email}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-password" class="form-label">Password</label>
+                        <input type="password" id="reg-password" class="form-control" th:field="*{password}"
+                               th:errorclass="is-invalid" autocomplete="new-password">
+                        <div class="invalid-feedback" th:errors="*{password}">Error</div>
+                        <div class="form-text">At least 8 characters.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reg-confirm" class="form-label">Confirm password</label>
+                        <input type="password" id="reg-confirm" class="form-control" th:field="*{confirmPassword}"
+                               th:errorclass="is-invalid" autocomplete="new-password">
+                        <div class="invalid-feedback" th:errors="*{confirmPassword}">Error</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Logged in: profile ===== -->
+    <div th:if="${user != null}">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="h5 card-title">Profile</h2>
+                <p class="text-muted mb-3">
+                    Signed in as <strong th:text="${user.username}">name</strong>
+                    <span class="badge bg-secondary ms-1" th:text="${user.role}">USER</span>
+                </p>
+
+                <form th:action="@{/account/profile}" th:object="${profileForm}" method="post" novalidate>
+                    <div class="mb-3">
+                        <label for="profile-username" class="form-label">Username</label>
+                        <input type="text" id="profile-username" class="form-control" th:field="*{username}"
+                               th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{username}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="profile-email" class="form-label">Email</label>
+                        <input type="email" id="profile-email" class="form-control" th:field="*{email}"
+                               th:errorclass="is-invalid">
+                        <div class="invalid-feedback" th:errors="*{email}">Error</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save changes</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-danger" th:if="${user.role.name() != 'ADMIN'}">
+            <div class="card-body">
+                <h2 class="h5 card-title text-danger">Delete account</h2>
+                <p class="text-muted">This permanently deletes your account and your comments. Enter your password to confirm.</p>
+                <div class="alert alert-danger" th:if="${deleteError != null}" th:text="${deleteError}">Error</div>
+                <form th:action="@{/account/delete}" method="post"
+                      onsubmit="return confirm('Delete your account permanently?');">
+                    <div class="mb-3">
+                        <label for="delete-password" class="form-label">Password</label>
+                        <input type="password" id="delete-password" name="password" class="form-control"
+                               autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-danger">Delete my account</button>
+                </form>
+            </div>
+        </div>
+        <div class="alert alert-danger" th:if="${user.role.name() == 'ADMIN' and deleteError != null}"
+             th:text="${deleteError}">Error</div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

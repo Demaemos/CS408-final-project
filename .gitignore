@@ -27,3 +27,6 @@ replay_pid*
 *.pem
 .env
 target/
+
+src/Full Stack Project Specification.md
+.vscode/settings.json

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Manage Game')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5" style="max-width: 900px;">
+    <h1 class="mb-4" th:text="${gameId == null} ? 'Create game' : 'Edit game'">Manage game</h1>
+    <form th:action="${gameId == null} ? @{/admin/games} : @{/admin/games/{id}(id=${gameId})}"
+          th:object="${gameForm}" method="post" novalidate>
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input id="title" class="form-control" th:field="*{title}" th:errorclass="is-invalid">
+            <div class="invalid-feedback" th:errors="*{title}">Error</div>
+        </div>
+        <div class="mb-3">
+            <label for="slug" class="form-label">URL slug</label>
+            <input id="slug" class="form-control" th:field="*{slug}" th:errorclass="is-invalid">
+            <div class="invalid-feedback" th:errors="*{slug}">Error</div>
+        </div>
+        <div class="mb-3">
+            <label for="tagline" class="form-label">Tagline</label>
+            <input id="tagline" class="form-control" th:field="*{tagline}" th:errorclass="is-invalid">
+            <div class="invalid-feedback" th:errors="*{tagline}">Error</div>
+        </div>
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <textarea id="description" class="form-control" rows="5"
+                      th:field="*{description}" th:errorclass="is-invalid"></textarea>
+            <div class="invalid-feedback" th:errors="*{description}">Error</div>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-6 mb-3">
+                <label for="releaseStatus" class="form-label">Release status</label>
+                <select id="releaseStatus" class="form-select" th:field="*{releaseStatus}">
+                    <option th:each="status : ${statuses}" th:value="${status}" th:text="${status.label}">Announced</option>
+                </select>
+                <div class="text-danger small" th:errors="*{releaseStatus}">Error</div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="releaseDate" class="form-label">Release date</label>
+                <input id="releaseDate" type="date" class="form-control" th:field="*{releaseDate}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="esrbRating" class="form-label">ESRB rating</label>
+                <input id="esrbRating" class="form-control" th:field="*{esrbRating}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="coverImage" class="form-label">Cover image URL</label>
+                <input id="coverImage" class="form-control" th:field="*{coverImage}">
+            </div>
+            <div class="col-12 mb-3">
+                <label for="trailerUrl" class="form-label">Trailer URL</label>
+                <input id="trailerUrl" class="form-control" th:field="*{trailerUrl}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="genreIds" class="form-label">Genres</label>
+                <select id="genreIds" class="form-select" th:field="*{genreIds}" multiple size="5">
+                    <option th:each="genre : ${genres}" th:value="${genre.id}" th:text="${genre.name}">Genre</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="platformIds" class="form-label">Platforms</label>
+                <select id="platformIds" class="form-select" th:field="*{platformIds}" multiple size="5">
+                    <option th:each="platform : ${platforms}" th:value="${platform.id}" th:text="${platform.name}">Platform</option>
+                </select>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save game</button>
+            <a class="btn btn-outline-secondary" th:href="@{/admin}">Cancel</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

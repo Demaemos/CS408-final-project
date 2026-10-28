@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Admin Dashboard')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Admin Dashboard</h1>
+        <a class="btn btn-primary" th:href="@{/admin/games/new}">Create game</a>
+    </div>
+    <div class="alert alert-success" th:if="${message != null}" th:text="${message}">Saved.</div>
+
+    <section aria-labelledby="games-heading">
+        <h2 id="games-heading" class="h4">Games</h2>
+        <div th:if="${#lists.isEmpty(games)}" class="alert alert-info">No games yet.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(games)}">
+            <table class="table align-middle">
+                <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:each="game : ${games}">
+                    <td th:text="${game.title}">Game</td>
+                    <td th:text="${game.releaseStatus.label}">Announced</td>
+                    <td class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary"
+                           th:href="@{/admin/games/{id}/edit(id=${game.id})}">Edit</a>
+                        <form method="post" th:action="@{/admin/games/{id}/delete(id=${game.id})}"
+                              onsubmit="return confirm('Delete this game?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

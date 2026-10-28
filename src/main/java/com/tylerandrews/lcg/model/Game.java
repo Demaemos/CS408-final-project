@@ -2,7 +2,9 @@ package com.tylerandrews.lcg.model;
  
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
  
 @Entity
@@ -61,6 +63,9 @@ public class Game {
         joinColumns = @JoinColumn(name = "game_id"),
         inverseJoinColumns = @JoinColumn(name = "platform_id"))
     private Set<Platform> platforms = new HashSet<>();
+
+    @OneToMany(mappedBy = "game", cascade = CascadeType.REMOVE)
+    private List<Comment> comments = new ArrayList<>();
  
     public Long getId() { return id; }
     public String getTitle() { return title; }
@@ -83,5 +88,6 @@ public class Game {
     public void setTrailerUrl(String trailerUrl) { this.trailerUrl = trailerUrl; }
     public Set<Genre> getGenres() { return genres; }
     public Set<Platform> getPlatforms() { return platforms; }
+    public List<Comment> getComments() { return comments; }
 }
  
