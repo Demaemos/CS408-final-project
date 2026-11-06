@@ -2,8 +2,10 @@ package com.tylerandrews.lcg;
 
 import com.tylerandrews.lcg.config.SessionKeys;
 import com.tylerandrews.lcg.model.Game;
+import com.tylerandrews.lcg.model.NewsPost;
 import com.tylerandrews.lcg.model.User;
 import com.tylerandrews.lcg.repository.GameRepository;
+import com.tylerandrews.lcg.repository.NewsPostRepository;
 import com.tylerandrews.lcg.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +34,8 @@ class AdminControllerTest {
     private UserService userService;
     @Autowired
     private GameRepository gameRepository;
+    @Autowired
+    private NewsPostRepository newsPostRepository;
 
     private MockMvc mockMvc;
 
@@ -91,6 +95,42 @@ class AdminControllerTest {
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/admin"));
         assertThat(gameRepository.findById(created.getId())).isEmpty();
+    }
+
+    @Test
+    void adminCanCreateEditAndDeleteNewsPosts() throws Exception {
+        User admin = userService.createAdmin("newsadmin", "newsadmin@example.com", "admin-password");
+        MockHttpSession session = sessionFor(admin);
+
+        mockMvc.perform(get("/admin/news/new").session(session))
+            .andExpect(status().isOk())
+            .andExpect(view().name("admin/news-form"));
+
+        mockMvc.perform(post("/admin/news").session(session)
+                .param("title", "Admin News")
+                .param("slug", "admin-news")
+                .param("body", "Initial content")
+                .param("tags", " devlog, production "))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/admin"));
+
+        NewsPost created = newsPostRepository.findBySlug("admin-news").orElseThrow();
+        assertThat(created.getTags()).isEqualTo("devlog,production");
+
+        mockMvc.perform(post("/admin/news/" + created.getId()).session(session)
+                .param("title", "Updated Admin News")
+                .param("slug", "admin-news")
+                .param("body", "Updated content")
+                .param("tags", "announcement"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/admin"));
+        assertThat(newsPostRepository.findById(created.getId()).orElseThrow().getTitle())
+            .isEqualTo("Updated Admin News");
+
+        mockMvc.perform(post("/admin/news/" + created.getId() + "/delete").session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/admin"));
+        assertThat(newsPostRepository.findById(created.getId())).isEmpty();
     }
 
     private MockHttpSession sessionFor(User user) {

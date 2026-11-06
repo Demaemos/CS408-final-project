@@ -40,5 +40,6 @@ public class JobPosting {
     public boolean isOpen() { return isOpen; }
     public void setOpen(boolean open) { isOpen = open; }
     public LocalDateTime getPostedAt() { return postedAt; }
+    public void setPostedAt(LocalDateTime postedAt) { this.postedAt = postedAt; }
 }
  

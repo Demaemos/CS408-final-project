@@ -1,9 +1,13 @@
 package com.tylerandrews.lcg.controller;
 
 import com.tylerandrews.lcg.form.AdminGameForm;
+import com.tylerandrews.lcg.form.AdminNewsForm;
 import com.tylerandrews.lcg.model.Game;
+import com.tylerandrews.lcg.model.NewsPost;
 import com.tylerandrews.lcg.repository.GameRepository;
+import com.tylerandrews.lcg.repository.NewsPostRepository;
 import com.tylerandrews.lcg.service.GameService;
+import com.tylerandrews.lcg.service.NewsPostService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -17,21 +21,31 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Objects;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Controller
 public class AdminController {
 
     private final GameService gameService;
     private final GameRepository gameRepository;
+    private final NewsPostService newsPostService;
+    private final NewsPostRepository newsPostRepository;
 
-    public AdminController(GameService gameService, GameRepository gameRepository) {
+    public AdminController(GameService gameService,
+                          GameRepository gameRepository,
+                          NewsPostService newsPostService,
+                          NewsPostRepository newsPostRepository) {
         this.gameService = gameService;
         this.gameRepository = gameRepository;
+        this.newsPostService = newsPostService;
+        this.newsPostRepository = newsPostRepository;
     }
 
     @GetMapping("/admin")
     public String dashboard(Model model) {
         model.addAttribute("games", gameService.allGames());
+        model.addAttribute("posts", newsPostService.latest(5));
         return "admin/dashboard";
     }
 
@@ -40,6 +54,63 @@ public class AdminController {
         model.addAttribute("gameForm", new AdminGameForm());
         prepareForm(model);
         return "admin/game-form";
+    }
+
+    @GetMapping("/admin/news/new")
+    public String newNews(Model model) {
+        model.addAttribute("newsForm", new AdminNewsForm());
+        return "admin/news-form";
+    }
+
+    @PostMapping("/admin/news")
+    public String createNews(@Valid @ModelAttribute("newsForm") AdminNewsForm form,
+                             BindingResult result,
+                             Model model,
+                             RedirectAttributes redirect) {
+        validateNewsSlug(form, null, result);
+        if (result.hasErrors()) {
+            return "admin/news-form";
+        }
+
+        NewsPost post = new NewsPost();
+        copyNewsForm(form, post);
+        newsPostRepository.save(post);
+        redirect.addFlashAttribute("message", "News post created.");
+        return "redirect:/admin";
+    }
+
+    @GetMapping("/admin/news/{id}/edit")
+    public String editNews(@PathVariable Long id, Model model) {
+        NewsPost post = findNews(id);
+        model.addAttribute("newsId", id);
+        model.addAttribute("newsForm", toNewsForm(post));
+        return "admin/news-form";
+    }
+
+    @PostMapping("/admin/news/{id}")
+    public String updateNews(@PathVariable Long id,
+                             @Valid @ModelAttribute("newsForm") AdminNewsForm form,
+                             BindingResult result,
+                             Model model,
+                             RedirectAttributes redirect) {
+        NewsPost post = findNews(id);
+        validateNewsSlug(form, id, result);
+        if (result.hasErrors()) {
+            model.addAttribute("newsId", id);
+            return "admin/news-form";
+        }
+
+        copyNewsForm(form, post);
+        newsPostRepository.save(post);
+        redirect.addFlashAttribute("message", "News post updated.");
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/admin/news/{id}/delete")
+    public String deleteNews(@PathVariable Long id, RedirectAttributes redirect) {
+        newsPostRepository.delete(findNews(id));
+        redirect.addFlashAttribute("message", "News post deleted.");
+        return "redirect:/admin";
     }
 
     @PostMapping("/admin/games")
@@ -96,6 +167,11 @@ public class AdminController {
         return "redirect:/admin";
     }
 
+    private NewsPost findNews(Long id) {
+        return newsPostService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "News post not found"));
+    }
+
     private Game findGame(Long id) {
         return gameService.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
@@ -103,6 +179,12 @@ public class AdminController {
 
     private void validateSlug(AdminGameForm form, Long currentId, BindingResult result) {
         gameRepository.findBySlug(form.getSlug())
+            .filter(existing -> !Objects.equals(existing.getId(), currentId))
+            .ifPresent(existing -> result.rejectValue("slug", "taken", "That slug is already in use."));
+    }
+
+    private void validateNewsSlug(AdminNewsForm form, Long currentId, BindingResult result) {
+        newsPostRepository.findBySlug(form.getSlug().trim())
             .filter(existing -> !Objects.equals(existing.getId(), currentId))
             .ifPresent(existing -> result.rejectValue("slug", "taken", "That slug is already in use."));
     }
@@ -140,6 +222,35 @@ public class AdminController {
             .collect(java.util.stream.Collectors.toSet()));
         form.setPlatformIds(game.getPlatforms().stream().map(platform -> platform.getId())
             .collect(java.util.stream.Collectors.toSet()));
+        return form;
+    }
+
+    private void copyNewsForm(AdminNewsForm form, NewsPost post) {
+        post.setTitle(form.getTitle().trim());
+        post.setSlug(form.getSlug().trim());
+        post.setBody(form.getBody());
+        post.setTags(normalizeTags(form.getTags()));
+        post.setImage(form.getImage());
+    }
+
+    private String normalizeTags(String tags) {
+        if (tags == null || tags.isBlank()) {
+            return null;
+        }
+        String normalized = Arrays.stream(tags.split(","))
+            .map(String::trim)
+            .filter(tag -> !tag.isEmpty())
+            .collect(Collectors.joining(","));
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    private AdminNewsForm toNewsForm(NewsPost post) {
+        AdminNewsForm form = new AdminNewsForm();
+        form.setTitle(post.getTitle());
+        form.setSlug(post.getSlug());
+        form.setBody(post.getBody());
+        form.setTags(post.getTags());
+        form.setImage(post.getImage());
         return form;
     }
 }

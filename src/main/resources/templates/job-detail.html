@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title=${job.title})}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <div class="mb-3">
+        <a href="/careers" class="text-decoration-none">&larr; Back to careers</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="mb-3">
+                <span class="badge bg-success" th:if="${job.open}">Open</span>
+                <span class="badge bg-secondary" th:unless="${job.open}">Closed</span>
+            </div>
+
+            <h1 class="mb-3" th:text="${job.title}">Role title</h1>
+            <p class="text-muted mb-4">
+                <strong th:text="${job.department}">Engineering</strong> &middot;
+                <span th:text="${job.location}">Remote</span>
+            </p>
+
+            <section class="mb-4">
+                <h2 class="h4">Role overview</h2>
+                <p th:text="${job.description}">Description</p>
+            </section>
+
+            <section>
+                <h2 class="h4">Requirements</h2>
+                <p th:text="${job.requirements}">Requirements</p>
+            </section>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>
