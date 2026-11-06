@@ -29,6 +29,7 @@ public class DataSeeder implements CommandLineRunner {
     private final PlatformRepository platformRepository;
     private final GameRepository gameRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final NewsPostRepository newsPostRepository;
     private final JobPostingRepository jobPostingRepository;
     private final UserService userService;
     private final String adminUsername;
@@ -38,6 +39,7 @@ public class DataSeeder implements CommandLineRunner {
                       PlatformRepository platformRepository,
                       GameRepository gameRepository,
                       TeamMemberRepository teamMemberRepository,
+                      NewsPostRepository newsPostRepository,
                       JobPostingRepository jobPostingRepository,
                       UserService userService,
                       @Value("${lcg.admin.username:admin}") String adminUsername,
@@ -46,6 +48,7 @@ public class DataSeeder implements CommandLineRunner {
         this.platformRepository = platformRepository;
         this.gameRepository = gameRepository;
         this.teamMemberRepository = teamMemberRepository;
+        this.newsPostRepository = newsPostRepository;
         this.jobPostingRepository = jobPostingRepository;
         this.userService = userService;
         this.adminUsername = adminUsername;
@@ -94,6 +97,24 @@ public class DataSeeder implements CommandLineRunner {
             teamMemberRepository.saveAll(List.of(t1, t2));
         }
 
+        if (newsPostRepository.count() == 0) {
+            NewsPost devlog = new NewsPost();
+            devlog.setTitle("Production update: prototype playtest week");
+            devlog.setSlug("production-update-prototype-playtest-week");
+            devlog.setBody("Our team wrapped a full prototype playtest and captured notes on pacing, combat clarity, and onboarding. We’re tuning the early loop before we lock the next milestone.");
+            devlog.setTags("devlog,production,prototype");
+            devlog.setImage("/images/devlog-placeholder.jpg");
+            newsPostRepository.save(devlog);
+
+            NewsPost announcement = new NewsPost();
+            announcement.setTitle("Studio roadmap: worldbuilding and art direction");
+            announcement.setSlug("studio-roadmap-worldbuilding-and-art-direction");
+            announcement.setBody("We’re expanding the world bible, refining our visual direction, and preparing a larger set of playable screens for the next build.");
+            announcement.setTags("announcement,art,design");
+            announcement.setImage("/images/announcement-placeholder.jpg");
+            newsPostRepository.save(announcement);
+        }
+
         if (jobPostingRepository.count() == 0) {
             JobPosting job = new JobPosting();
             job.setTitle("Gameplay Engineer");
@@ -103,6 +124,15 @@ public class DataSeeder implements CommandLineRunner {
             job.setRequirements("2+ years of game development experience.");
             job.setOpen(true);
             jobPostingRepository.save(job);
+
+            JobPosting narrative = new JobPosting();
+            narrative.setTitle("Narrative Designer");
+            narrative.setDepartment("Design");
+            narrative.setLocation("Austin, TX");
+            narrative.setDescription("Design quests, characters, and world events for an all-ages adventure.");
+            narrative.setRequirements("Strong writing samples and a love of player-driven storytelling.");
+            narrative.setOpen(true);
+            jobPostingRepository.save(narrative);
         }
 
         if (!adminPassword.isBlank() && !userService.usernameTaken(adminUsername, null)) {

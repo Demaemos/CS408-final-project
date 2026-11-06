@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='News editor')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0" th:text="${newsId != null ? 'Edit News Post' : 'Create News Post'}">Create News Post</h1>
+        <a class="btn btn-outline-secondary" th:href="@{/admin}">Back to dashboard</a>
+    </div>
+
+    <form th:action="${newsId != null ? '/admin/news/' + newsId : '/admin/news'}" th:object="${newsForm}" method="post" class="card card-body shadow-sm">
+        <div th:if="${#fields.hasAnyErrors()}" class="alert alert-danger">
+            <div th:each="err : ${#fields.errors('*')}" th:text="${err}">Validation error</div>
+        </div>
+
+        <div class="mb-3">
+            <label for="title" class="form-label">Title</label>
+            <input id="title" type="text" th:field="*{title}" class="form-control">
+            <div class="text-danger" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+        </div>
+
+        <div class="mb-3">
+            <label for="slug" class="form-label">Slug</label>
+            <input id="slug" type="text" th:field="*{slug}" class="form-control">
+            <div class="text-danger" th:if="${#fields.hasErrors('slug')}" th:errors="*{slug}"></div>
+        </div>
+
+        <div class="mb-3">
+            <label for="tags" class="form-label">Tags</label>
+            <input id="tags" type="text" th:field="*{tags}" class="form-control" placeholder="devlog, production, announcement">
+        </div>
+
+        <div class="mb-3">
+            <label for="image" class="form-label">Image URL</label>
+            <input id="image" type="text" th:field="*{image}" class="form-control" placeholder="/images/news.jpg">
+        </div>
+
+        <div class="mb-3">
+            <label for="body" class="form-label">Body</label>
+            <textarea id="body" th:field="*{body}" rows="10" class="form-control"></textarea>
+            <div class="text-danger" th:if="${#fields.hasErrors('body')}" th:errors="*{body}"></div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" th:text="${newsId != null ? 'Save changes' : 'Create post'}">Create post</button>
+            <a th:href="@{/admin}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Careers')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5">
+    <h1 class="mb-4">Careers</h1>
+
+    <form method="get" th:action="@{/careers}" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="department" class="form-label">Department</label>
+            <select id="department" name="department" class="form-select">
+                <option value="">All departments</option>
+                <option th:each="departmentName : ${departments}" th:value="${departmentName}"
+                        th:text="${departmentName}" th:selected="${departmentName == selectedDepartment}">Engineering</option>
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label for="location" class="form-label">Location</label>
+            <select id="location" name="location" class="form-select">
+                <option value="">All locations</option>
+                <option th:each="locationName : ${locations}" th:value="${locationName}"
+                        th:text="${locationName}" th:selected="${locationName == selectedLocation}">Remote</option>
+            </select>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a th:href="@{/careers}" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+
+    <div th:if="${#lists.isEmpty(jobs)}" class="alert alert-info">
+        No open roles match the selected filters.
+    </div>
+
+    <div class="row g-4" th:if="${!#lists.isEmpty(jobs)}">
+        <div class="col-md-6" th:each="job : ${jobs}">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-2">
+                        <span class="badge bg-success" th:if="${job.open}">Open</span>
+                        <span class="badge bg-secondary" th:unless="${job.open}">Closed</span>
+                    </div>
+                    <h2 class="h5 card-title" th:text="${job.title}">Role title</h2>
+                    <p class="text-muted mb-3">
+                        <span th:text="${job.department}">Engineering</span> &middot;
+                        <span th:text="${job.location}">Remote</span>
+                    </p>
+                    <p class="card-text" th:text="${#strings.abbreviate(job.description, 180)}">Short description</p>
+                    <a class="btn btn-outline-primary mt-auto" th:href="@{/careers/{id}(id=${job.id})}">View role</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

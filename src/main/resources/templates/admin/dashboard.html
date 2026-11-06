@@ -7,11 +7,14 @@
 <main class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Admin Dashboard</h1>
-        <a class="btn btn-primary" th:href="@{/admin/games/new}">Create game</a>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" th:href="@{/admin/games/new}">Create game</a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/news/new}">Create news</a>
+        </div>
     </div>
     <div class="alert alert-success" th:if="${message != null}" th:text="${message}">Saved.</div>
 
-    <section aria-labelledby="games-heading">
+    <section aria-labelledby="games-heading" class="mb-5">
         <h2 id="games-heading" class="h4">Games</h2>
         <div th:if="${#lists.isEmpty(games)}" class="alert alert-info">No games yet.</div>
         <div class="table-responsive" th:unless="${#lists.isEmpty(games)}">
@@ -26,6 +29,29 @@
                            th:href="@{/admin/games/{id}/edit(id=${game.id})}">Edit</a>
                         <form method="post" th:action="@{/admin/games/{id}/delete(id=${game.id})}"
                               onsubmit="return confirm('Delete this game?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section aria-labelledby="news-heading">
+        <h2 id="news-heading" class="h4">Recent News</h2>
+        <div th:if="${#lists.isEmpty(posts)}" class="alert alert-info">No posts yet.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(posts)}">
+            <table class="table align-middle">
+                <thead><tr><th>Title</th><th>Tags</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:each="post : ${posts}">
+                    <td th:text="${post.title}">News post</td>
+                    <td th:text="${post.tags}">devlog</td>
+                    <td class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/news/{id}/edit(id=${post.id})}">Edit</a>
+                        <form method="post" th:action="@{/admin/news/{id}/delete(id=${post.id})}"
+                              onsubmit="return confirm('Delete this news post?');">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
                     </td>
