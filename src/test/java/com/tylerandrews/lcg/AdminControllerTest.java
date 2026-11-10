@@ -2,9 +2,13 @@ package com.tylerandrews.lcg;
 
 import com.tylerandrews.lcg.config.SessionKeys;
 import com.tylerandrews.lcg.model.Game;
+import com.tylerandrews.lcg.model.JobApplication;
+import com.tylerandrews.lcg.model.JobPosting;
 import com.tylerandrews.lcg.model.NewsPost;
 import com.tylerandrews.lcg.model.User;
 import com.tylerandrews.lcg.repository.GameRepository;
+import com.tylerandrews.lcg.repository.JobApplicationRepository;
+import com.tylerandrews.lcg.repository.JobPostingRepository;
 import com.tylerandrews.lcg.repository.NewsPostRepository;
 import com.tylerandrews.lcg.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @SpringBootTest
 @Transactional
@@ -36,6 +41,10 @@ class AdminControllerTest {
     private GameRepository gameRepository;
     @Autowired
     private NewsPostRepository newsPostRepository;
+    @Autowired
+    private JobPostingRepository jobPostingRepository;
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
 
     private MockMvc mockMvc;
 
@@ -95,6 +104,28 @@ class AdminControllerTest {
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/admin"));
         assertThat(gameRepository.findById(created.getId())).isEmpty();
+    }
+
+    @Test
+    void adminDashboardRendersApplications() throws Exception {
+        User admin = userService.createAdmin("applicationdashboardadmin", "applicationdashboardadmin@example.com", "admin-password");
+        JobPosting job = new JobPosting();
+        job.setTitle("Dashboard Test Role");
+        job.setDescription("Role description");
+        job.setRequirements("Role requirements");
+        job = jobPostingRepository.save(job);
+
+        JobApplication application = new JobApplication();
+        application.setJob(job);
+        application.setApplicantName("Dashboard Test Applicant");
+        application.setEmail("applicant@example.com");
+        application.setReferenceCode("LCG-DASH123");
+        jobApplicationRepository.save(application);
+
+        mockMvc.perform(get("/admin").session(sessionFor(admin)))
+            .andExpect(status().isOk())
+            .andExpect(view().name("admin/dashboard"))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard Test Applicant")));
     }
 
     @Test

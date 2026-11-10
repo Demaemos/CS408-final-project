@@ -72,22 +72,22 @@
             <table class="table align-middle">
                 <thead><tr><th>Applicant</th><th>Role</th><th>Status</th><th>Reference</th><th>Actions</th></tr></thead>
                 <tbody>
-                <tr th:each="application : ${applications}">
-                    <td th:text="${application.applicantName}">Applicant</td>
-                    <td th:text="${application.job.title}">Role</td>
+                <tr th:each="jobApplication : ${applications}">
+                    <td th:text="${jobApplication.applicantName}">Applicant</td>
+                    <td th:text="${jobApplication.job.title}">Role</td>
                     <td>
-                        <form method="post" th:action="@{/admin/applications/{id}/status(id=${application.id})}">
+                        <form method="post" th:action="@{/admin/applications/{id}/status(id=${jobApplication.id})}">
                             <select name="status" class="form-select form-select-sm">
                                 <option th:each="statusOption : ${T(com.tylerandrews.lcg.model.JobApplication.Status).values()}"
                                         th:value="${statusOption}"
                                         th:text="${statusOption}"
-                                        th:selected="${statusOption == application.status}"></option>
+                                        th:selected="${statusOption == jobApplication.status}"></option>
                             </select>
                             <button type="submit" class="btn btn-sm btn-primary mt-2">Update</button>
                         </form>
                     </td>
-                    <td><code th:text="${application.referenceCode}">LCG-123</code></td>
-                    <td th:text="${application.email}">email@example.com</td>
+                    <td><code th:text="${jobApplication.referenceCode}">LCG-123</code></td>
+                    <td th:text="${jobApplication.email}">email@example.com</td>
                 </tr>
                 </tbody>
             </table>
