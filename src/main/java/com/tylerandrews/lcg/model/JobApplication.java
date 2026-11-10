@@ -55,5 +55,6 @@ public class JobApplication {
     public String getReferenceCode() { return referenceCode; }
     public void setReferenceCode(String referenceCode) { this.referenceCode = referenceCode; }
     public LocalDateTime getSubmittedAt() { return submittedAt; }
+    public void setSubmittedAt(LocalDateTime submittedAt) { this.submittedAt = submittedAt; }
 }
  

@@ -30,6 +30,7 @@ public class Comment {
     private LocalDateTime editedAt;
  
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
     public Game getGame() { return game; }
@@ -39,6 +40,7 @@ public class Comment {
     public String getBody() { return body; }
     public void setBody(String body) { this.body = body; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getEditedAt() { return editedAt; }
     public void setEditedAt(LocalDateTime editedAt) { this.editedAt = editedAt; }
 }
