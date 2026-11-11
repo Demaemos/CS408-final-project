@@ -28,6 +28,14 @@ public class JobPostingService {
         return jobPostingRepository.findById(id);
     }
 
+    public JobPosting save(JobPosting jobPosting) {
+        return jobPostingRepository.save(jobPosting);
+    }
+
+    public void delete(JobPosting jobPosting) {
+        jobPostingRepository.delete(jobPosting);
+    }
+
     public List<String> departments() {
         return jobPostingRepository.findOpenDepartments();
     }

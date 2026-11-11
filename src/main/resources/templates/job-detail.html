@@ -9,7 +9,12 @@
         <a href="/careers" class="text-decoration-none">&larr; Back to careers</a>
     </div>
 
-    <div class="card shadow-sm">
+    <div class="alert alert-success" th:if="${applicationSuccess != null}" th:text="${applicationSuccess}">Application submitted.</div>
+    <div class="alert alert-success" th:if="${withdrawSuccess != null}" th:text="${withdrawSuccess}">Application withdrawn.</div>
+    <div class="alert alert-danger" th:if="${lookupError != null}" th:text="${lookupError}">No match.</div>
+    <div class="alert alert-danger" th:if="${withdrawError != null}" th:text="${withdrawError}">Withdraw failed.</div>
+
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="mb-3">
                 <span class="badge bg-success" th:if="${job.open}">Open</span>
@@ -31,6 +36,82 @@
                 <h2 class="h4">Requirements</h2>
                 <p th:text="${job.requirements}">Requirements</p>
             </section>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="h4">Apply now</h2>
+                    <form th:action="@{/careers/{id}/apply(id=${job.id})}" th:object="${applicationForm}" method="post" novalidate>
+                        <div class="mb-3">
+                            <label for="applicantName" class="form-label">Full name</label>
+                            <input id="applicantName" type="text" class="form-control" th:field="*{applicantName}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{applicantName}">Error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input id="email" type="email" class="form-control" th:field="*{email}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{email}">Error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="coverNote" class="form-label">Cover note</label>
+                            <textarea id="coverNote" rows="5" class="form-control" th:field="*{coverNote}" th:errorclass="is-invalid"></textarea>
+                            <div class="invalid-feedback" th:errors="*{coverNote}">Error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="portfolioUrl" class="form-label">Portfolio URL (optional)</label>
+                            <input id="portfolioUrl" type="url" class="form-control" th:field="*{portfolioUrl}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{portfolioUrl}">Error</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resumeUrl" class="form-label">Resume URL (optional)</label>
+                            <input id="resumeUrl" type="url" class="form-control" th:field="*{resumeUrl}" th:errorclass="is-invalid">
+                            <div class="invalid-feedback" th:errors="*{resumeUrl}">Error</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" th:disabled="${!job.open}">Submit application</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h2 class="h4">Check an application</h2>
+                    <form th:action="@{/careers/{id}/lookup(id=${job.id})}" method="post" class="mb-4">
+                        <div class="mb-3">
+                            <label for="lookup-email" class="form-label">Email</label>
+                            <input id="lookup-email" type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="lookup-code" class="form-label">Reference code</label>
+                            <input id="lookup-code" type="text" name="referenceCode" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary">Lookup</button>
+                    </form>
+
+                    <div class="alert alert-info" th:if="${lookupSuccess != null and lookupApplication != null}">
+                        <strong>Application found.</strong>
+                        <div>Status: <span th:text="${lookupApplication.status}">NEW</span></div>
+                        <div>Reference: <code th:text="${lookupApplication.referenceCode}">LCG-123</code></div>
+                    </div>
+
+                    <h3 class="h5">Withdraw application</h3>
+                    <form th:action="@{/careers/{id}/withdraw(id=${job.id})}" method="post">
+                        <div class="mb-3">
+                            <label for="withdraw-email" class="form-label">Email</label>
+                            <input id="withdraw-email" type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="withdraw-code" class="form-label">Reference code</label>
+                            <input id="withdraw-code" type="text" name="referenceCode" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">Withdraw</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </main>

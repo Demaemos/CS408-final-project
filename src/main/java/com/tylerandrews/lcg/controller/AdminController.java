@@ -1,12 +1,19 @@
 package com.tylerandrews.lcg.controller;
 
 import com.tylerandrews.lcg.form.AdminGameForm;
+import com.tylerandrews.lcg.form.AdminJobForm;
 import com.tylerandrews.lcg.form.AdminNewsForm;
 import com.tylerandrews.lcg.model.Game;
+import com.tylerandrews.lcg.model.JobApplication;
+import com.tylerandrews.lcg.model.JobPosting;
 import com.tylerandrews.lcg.model.NewsPost;
 import com.tylerandrews.lcg.repository.GameRepository;
+import com.tylerandrews.lcg.repository.JobApplicationRepository;
+import com.tylerandrews.lcg.repository.JobPostingRepository;
 import com.tylerandrews.lcg.repository.NewsPostRepository;
 import com.tylerandrews.lcg.service.GameService;
+import com.tylerandrews.lcg.service.JobApplicationService;
+import com.tylerandrews.lcg.service.JobPostingService;
 import com.tylerandrews.lcg.service.NewsPostService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,11 +24,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Objects;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Controller
@@ -31,21 +39,35 @@ public class AdminController {
     private final GameRepository gameRepository;
     private final NewsPostService newsPostService;
     private final NewsPostRepository newsPostRepository;
+    private final JobPostingService jobPostingService;
+    private final JobPostingRepository jobPostingRepository;
+    private final JobApplicationService jobApplicationService;
+    private final JobApplicationRepository jobApplicationRepository;
 
     public AdminController(GameService gameService,
                           GameRepository gameRepository,
                           NewsPostService newsPostService,
-                          NewsPostRepository newsPostRepository) {
+                          NewsPostRepository newsPostRepository,
+                          JobPostingService jobPostingService,
+                          JobPostingRepository jobPostingRepository,
+                          JobApplicationService jobApplicationService,
+                          JobApplicationRepository jobApplicationRepository) {
         this.gameService = gameService;
         this.gameRepository = gameRepository;
         this.newsPostService = newsPostService;
         this.newsPostRepository = newsPostRepository;
+        this.jobPostingService = jobPostingService;
+        this.jobPostingRepository = jobPostingRepository;
+        this.jobApplicationService = jobApplicationService;
+        this.jobApplicationRepository = jobApplicationRepository;
     }
 
     @GetMapping("/admin")
     public String dashboard(Model model) {
         model.addAttribute("games", gameService.allGames());
         model.addAttribute("posts", newsPostService.latest(5));
+        model.addAttribute("jobs", jobPostingService.allJobs());
+        model.addAttribute("applications", jobApplicationService.findAll());
         return "admin/dashboard";
     }
 
@@ -56,10 +78,78 @@ public class AdminController {
         return "admin/game-form";
     }
 
+    @GetMapping("/admin/jobs/new")
+    public String newJob(Model model) {
+        model.addAttribute("jobForm", new AdminJobForm());
+        return "admin/job-form";
+    }
+
     @GetMapping("/admin/news/new")
     public String newNews(Model model) {
         model.addAttribute("newsForm", new AdminNewsForm());
         return "admin/news-form";
+    }
+
+    @PostMapping("/admin/jobs")
+    public String createJob(@Valid @ModelAttribute("jobForm") AdminJobForm form,
+                            BindingResult result,
+                            RedirectAttributes redirect) {
+        if (result.hasErrors()) {
+            return "admin/job-form";
+        }
+
+        JobPosting job = new JobPosting();
+        copyJobForm(form, job);
+        jobPostingRepository.save(job);
+        redirect.addFlashAttribute("message", "Job posting created.");
+        return "redirect:/admin";
+    }
+
+    @GetMapping("/admin/jobs/{id}/edit")
+    public String editJob(@PathVariable Long id, Model model) {
+        JobPosting job = findJob(id);
+        model.addAttribute("jobId", id);
+        model.addAttribute("jobForm", toJobForm(job));
+        return "admin/job-form";
+    }
+
+    @PostMapping("/admin/jobs/{id}")
+    public String updateJob(@PathVariable Long id,
+                            @Valid @ModelAttribute("jobForm") AdminJobForm form,
+                            BindingResult result,
+                            RedirectAttributes redirect) {
+        JobPosting job = findJob(id);
+        if (result.hasErrors()) {
+            return "admin/job-form";
+        }
+        copyJobForm(form, job);
+        jobPostingRepository.save(job);
+        redirect.addFlashAttribute("message", "Job posting updated.");
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/admin/jobs/{id}/delete")
+    public String deleteJob(@PathVariable Long id, RedirectAttributes redirect) {
+        jobPostingService.delete(findJob(id));
+        redirect.addFlashAttribute("message", "Job posting deleted.");
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/admin/applications/{id}/status")
+    public String updateApplicationStatus(@PathVariable Long id,
+                                         @RequestParam("status") String status,
+                                         RedirectAttributes redirect) {
+        JobApplication application = jobApplicationService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+
+        try {
+            JobApplication.Status applicationStatus = JobApplication.Status.valueOf(status.trim().toUpperCase());
+            jobApplicationService.updateStatus(application, applicationStatus);
+            redirect.addFlashAttribute("message", "Application status updated.");
+        } catch (IllegalArgumentException ex) {
+            redirect.addFlashAttribute("message", "Invalid status value.");
+        }
+        return "redirect:/admin";
     }
 
     @PostMapping("/admin/news")
@@ -177,6 +267,11 @@ public class AdminController {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
     }
 
+    private JobPosting findJob(Long id) {
+        return jobPostingService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Job posting not found"));
+    }
+
     private void validateSlug(AdminGameForm form, Long currentId, BindingResult result) {
         gameRepository.findBySlug(form.getSlug())
             .filter(existing -> !Objects.equals(existing.getId(), currentId))
@@ -231,6 +326,26 @@ public class AdminController {
         post.setBody(form.getBody());
         post.setTags(normalizeTags(form.getTags()));
         post.setImage(form.getImage());
+    }
+
+    private void copyJobForm(AdminJobForm form, JobPosting job) {
+        job.setTitle(form.getTitle() == null ? null : form.getTitle().trim());
+        job.setDepartment(form.getDepartment() == null ? null : form.getDepartment().trim());
+        job.setLocation(form.getLocation() == null ? null : form.getLocation().trim());
+        job.setDescription(form.getDescription() == null ? null : form.getDescription().trim());
+        job.setRequirements(form.getRequirements() == null ? null : form.getRequirements().trim());
+        job.setOpen(form.isOpen());
+    }
+
+    private AdminJobForm toJobForm(JobPosting job) {
+        AdminJobForm form = new AdminJobForm();
+        form.setTitle(job.getTitle());
+        form.setDepartment(job.getDepartment());
+        form.setLocation(job.getLocation());
+        form.setDescription(job.getDescription());
+        form.setRequirements(job.getRequirements());
+        form.setOpen(job.isOpen());
+        return form;
     }
 
     private String normalizeTags(String tags) {

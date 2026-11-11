@@ -1,14 +1,22 @@
 package com.tylerandrews.lcg.controller;
 
+import com.tylerandrews.lcg.config.SessionKeys;
+import com.tylerandrews.lcg.model.Game;
 import com.tylerandrews.lcg.model.JobPosting;
 import com.tylerandrews.lcg.model.NewsPost;
+import com.tylerandrews.lcg.model.User;
+import com.tylerandrews.lcg.repository.CommentRepository;
+import com.tylerandrews.lcg.repository.GameRepository;
+import com.tylerandrews.lcg.repository.JobApplicationRepository;
 import com.tylerandrews.lcg.repository.JobPostingRepository;
 import com.tylerandrews.lcg.repository.NewsPostRepository;
+import com.tylerandrews.lcg.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -19,7 +27,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -35,6 +45,14 @@ class PageControllerTest {
     private NewsPostRepository newsPostRepository;
     @Autowired
     private JobPostingRepository jobPostingRepository;
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
+    @Autowired
+    private CommentRepository commentRepository;
+    @Autowired
+    private GameRepository gameRepository;
+    @Autowired
+    private UserService userService;
 
     private MockMvc mockMvc;
 
@@ -199,5 +217,61 @@ class PageControllerTest {
         List<?> jobs = (List<?>) result.getModelAndView().getModel().get("jobs");
         assertThat(jobs).hasSize(1);
         assertThat(((JobPosting) jobs.get(0)).getTitle()).isEqualTo("QA Engineer");
+    }
+
+    @Test
+    void applicantsCanSubmitLookupAndWithdrawAnApplication() throws Exception {
+        JobPosting role = new JobPosting();
+        role.setTitle("UI Designer");
+        role.setDepartment("Design");
+        role.setLocation("Remote");
+        role.setDescription("Craft polished interfaces.");
+        role.setRequirements("Strong UX skills.");
+        role = jobPostingRepository.save(role);
+
+        mockMvc.perform(post("/careers/" + role.getId() + "/apply")
+                .param("applicantName", "Taylor Example")
+                .param("email", "taylor@example.com")
+                .param("coverNote", "I am excited to apply.")
+                .param("portfolioUrl", "https://example.com")
+                .param("resumeUrl", "https://example.com/resume"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/careers/" + role.getId()));
+
+        assertThat(jobApplicationRepository.findAll()).hasSize(1);
+        var application = jobApplicationRepository.findAll().get(0);
+        assertThat(application.getReferenceCode()).startsWith("LCG-");
+
+        mockMvc.perform(post("/careers/" + role.getId() + "/lookup")
+                .param("email", "taylor@example.com")
+                .param("referenceCode", application.getReferenceCode()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/careers/" + role.getId()));
+
+        mockMvc.perform(post("/careers/" + role.getId() + "/withdraw")
+                .param("email", "taylor@example.com")
+                .param("referenceCode", application.getReferenceCode()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/careers/" + role.getId()));
+
+        assertThat(jobApplicationRepository.findById(application.getId())).isEmpty();
+    }
+
+    @Test
+    void loggedInUsersCanPostAndDeleteComments() throws Exception {
+        User user = userService.register("commenter", "commenter@example.com", "Password12!");
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(SessionKeys.USER_ID, user.getId());
+        session.setAttribute(SessionKeys.USERNAME, user.getUsername());
+        session.setAttribute(SessionKeys.ROLE, user.getRole().name());
+
+        mockMvc.perform(post("/games/untitled-project-one/comments")
+                .session(session)
+                .param("body", "This game looks great!"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/games/untitled-project-one"));
+
+        Game game = gameRepository.findBySlug("untitled-project-one").orElseThrow();
+        assertThat(commentRepository.findByGameOrderByCreatedAtAsc(game)).hasSize(1);
     }
 }

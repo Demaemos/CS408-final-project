@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Manage Job Posting')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container my-5" style="max-width: 960px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0" th:text="${jobId != null} ? 'Edit job posting' : 'Create job posting'">Job posting</h1>
+        <a th:href="@{/admin}" class="btn btn-outline-secondary">Back to admin</a>
+    </div>
+
+    <form th:action="${jobId != null} ? @{/admin/jobs/{id}(id=${jobId})} : @{/admin/jobs}"
+          th:object="${jobForm}" method="post" novalidate>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label for="title" class="form-label">Title</label>
+                <input id="title" class="form-control" type="text" th:field="*{title}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{title}">Error</div>
+            </div>
+            <div class="col-md-3">
+                <label for="department" class="form-label">Department</label>
+                <input id="department" class="form-control" type="text" th:field="*{department}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{department}">Error</div>
+            </div>
+            <div class="col-md-3">
+                <label for="location" class="form-label">Location</label>
+                <input id="location" class="form-control" type="text" th:field="*{location}" th:errorclass="is-invalid">
+                <div class="invalid-feedback" th:errors="*{location}">Error</div>
+            </div>
+            <div class="col-12">
+                <label for="description" class="form-label">Description</label>
+                <textarea id="description" rows="5" class="form-control" th:field="*{description}" th:errorclass="is-invalid"></textarea>
+                <div class="invalid-feedback" th:errors="*{description}">Error</div>
+            </div>
+            <div class="col-12">
+                <label for="requirements" class="form-label">Requirements</label>
+                <textarea id="requirements" rows="5" class="form-control" th:field="*{requirements}" th:errorclass="is-invalid"></textarea>
+                <div class="invalid-feedback" th:errors="*{requirements}">Error</div>
+            </div>
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    <input id="open" class="form-check-input" type="checkbox" th:field="*{open}">
+                    <label class="form-check-label" for="open">Open for applications</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-primary" th:text="${jobId != null} ? 'Save changes' : 'Create job posting'">Save</button>
+            <a th:href="@{/admin}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

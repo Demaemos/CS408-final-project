@@ -52,6 +52,46 @@
             </div>
         </div>
     </div>
+
+    <section class="mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 mb-0">Comments</h2>
+        </div>
+
+        <div class="alert alert-success" th:if="${commentMessage != null}" th:text="${commentMessage}">Saved.</div>
+
+        <div class="mb-4" th:if="${session.userId != null}">
+            <form th:action="@{/games/{slug}/comments(slug=${game.slug})}" th:object="${commentForm}" method="post" novalidate>
+                <label for="game-comment" class="form-label">Add a comment</label>
+                <textarea id="game-comment" class="form-control" rows="4" th:field="*{body}" th:errorclass="is-invalid"></textarea>
+                <div class="invalid-feedback" th:errors="*{body}">Error</div>
+                <button type="submit" class="btn btn-primary mt-2">Post comment</button>
+            </form>
+        </div>
+
+        <div class="alert alert-info" th:if="${session.userId == null}">Log in to join the discussion.</div>
+
+        <div th:if="${#lists.isEmpty(comments)}" class="alert alert-light border">No comments yet.</div>
+
+        <div class="list-group" th:unless="${#lists.isEmpty(comments)}">
+            <div class="list-group-item" th:each="comment : ${comments}">
+                <div class="d-flex justify-content-between">
+                    <strong th:text="${comment.user.username}">User</strong>
+                    <small class="text-muted" th:text="${#temporals.format(comment.createdAt, 'MMMM d, yyyy')}">Date</small>
+                </div>
+                <div class="mt-2" th:text="${comment.body}">Body</div>
+                <div class="mt-3" th:if="${session.userId != null and (session.role == 'ADMIN' or comment.user.id == session.userId)}">
+                    <form th:action="@{/games/{slug}/comments/{commentId}/edit(slug=${game.slug}, commentId=${comment.id})}" method="post" class="mb-2">
+                        <textarea name="body" class="form-control mb-2" rows="3" th:text="${comment.body}"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Save edit</button>
+                    </form>
+                    <form th:action="@{/games/{slug}/comments/{commentId}/delete(slug=${game.slug}, commentId=${comment.id})}" method="post">
+                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this comment?');">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/footer :: footer}"></footer>

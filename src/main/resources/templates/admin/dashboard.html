@@ -10,6 +10,7 @@
         <div class="d-flex gap-2">
             <a class="btn btn-primary" th:href="@{/admin/games/new}">Create game</a>
             <a class="btn btn-outline-primary" th:href="@{/admin/news/new}">Create news</a>
+            <a class="btn btn-outline-primary" th:href="@{/admin/jobs/new}">Create job</a>
         </div>
     </div>
     <div class="alert alert-success" th:if="${message != null}" th:text="${message}">Saved.</div>
@@ -32,6 +33,61 @@
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
                     </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section aria-labelledby="jobs-heading" class="mb-5">
+        <h2 id="jobs-heading" class="h4">Job Postings</h2>
+        <div th:if="${#lists.isEmpty(jobs)}" class="alert alert-info">No jobs yet.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(jobs)}">
+            <table class="table align-middle">
+                <thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:each="job : ${jobs}">
+                    <td th:text="${job.title}">Gameplay Engineer</td>
+                    <td th:text="${job.department}">Engineering</td>
+                    <td>
+                        <span class="badge" th:text="${job.open ? 'Open' : 'Closed'}" th:classappend="${job.open ? 'bg-success' : 'bg-secondary'}">Open</span>
+                    </td>
+                    <td class="d-flex gap-2">
+                        <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/jobs/{id}/edit(id=${job.id})}">Edit</a>
+                        <form method="post" th:action="@{/admin/jobs/{id}/delete(id=${job.id})}"
+                              onsubmit="return confirm('Delete this job posting?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section aria-labelledby="application-heading" class="mb-5">
+        <h2 id="application-heading" class="h4">Applications</h2>
+        <div th:if="${#lists.isEmpty(applications)}" class="alert alert-info">No applications yet.</div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(applications)}">
+            <table class="table align-middle">
+                <thead><tr><th>Applicant</th><th>Role</th><th>Status</th><th>Reference</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:each="jobApplication : ${applications}">
+                    <td th:text="${jobApplication.applicantName}">Applicant</td>
+                    <td th:text="${jobApplication.job.title}">Role</td>
+                    <td>
+                        <form method="post" th:action="@{/admin/applications/{id}/status(id=${jobApplication.id})}">
+                            <select name="status" class="form-select form-select-sm">
+                                <option th:each="statusOption : ${T(com.tylerandrews.lcg.model.JobApplication.Status).values()}"
+                                        th:value="${statusOption}"
+                                        th:text="${statusOption}"
+                                        th:selected="${statusOption == jobApplication.status}"></option>
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary mt-2">Update</button>
+                        </form>
+                    </td>
+                    <td><code th:text="${jobApplication.referenceCode}">LCG-123</code></td>
+                    <td th:text="${jobApplication.email}">email@example.com</td>
                 </tr>
                 </tbody>
             </table>
