@@ -26,11 +26,13 @@
                 </form>
             </div>
             <form method="post" class="comment-edit-form mt-3" hidden
+                  th:if="${session.userId != null and session.role != 'ADMIN' and session.userId == comment.user.id}"
                   th:action="${commentBase + '/comments/' + comment.id + '/edit'}">
                 <textarea name="body" class="form-control mb-2" rows="3" th:text="${comment.body}"></textarea>
                 <button type="submit" class="btn btn-sm btn-primary">Save edit</button>
             </form>
             <form method="post" class="comment-reply-form mt-3" hidden
+                  th:if="${session.userId != null}"
                   th:action="${commentBase + '/comments/' + comment.id + '/replies'}">
                 <label class="form-label">Reply</label>
                 <textarea name="body" class="form-control mb-2" rows="2" maxlength="2000" required></textarea>

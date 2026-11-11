@@ -273,6 +273,54 @@ class PageControllerTest {
     }
 
     @Test
+    void commentsAndApplicationsRemainAvailableAfterLogout() throws Exception {
+        User user = userService.register("persistentuser", "persistent@example.com", "Password12!");
+        MockHttpSession session = sessionFor(user);
+        Game game = gameRepository.findBySlug("untitled-project-one").orElseThrow();
+
+        mockMvc.perform(post("/games/untitled-project-one/comments")
+                .session(session)
+                .param("body", "A comment that should remain visible"))
+            .andExpect(status().is3xxRedirection());
+
+        JobPosting job = jobPostingRepository.findAllByOrderByPostedAtDesc().get(0);
+        mockMvc.perform(post("/careers/" + job.getId() + "/apply")
+                .session(session)
+                .param("applicantName", "Persistent Applicant")
+                .param("email", "applicant@example.com")
+                .param("coverNote", "Please consider my application."))
+            .andExpect(status().is3xxRedirection());
+
+        mockMvc.perform(post("/logout").session(session))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/"));
+
+        assertThat(commentRepository.findByGameOrderByCreatedAtAsc(game))
+            .extracting(com.tylerandrews.lcg.model.Comment::getBody)
+            .containsExactly("A comment that should remain visible");
+        assertThat(jobApplicationRepository.findAll())
+            .extracting(com.tylerandrews.lcg.model.JobApplication::getApplicantName)
+            .contains("Persistent Applicant");
+
+        mockMvc.perform(post("/games/untitled-project-one/comments")
+                .param("body", "A guest cannot post this"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/account"));
+        assertThat(commentRepository.findByGameOrderByCreatedAtAsc(game)).hasSize(1);
+
+        mockMvc.perform(get("/games/untitled-project-one"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("A comment that should remain visible")))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("Log in")))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Post comment"))))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Post reply"))));
+    }
+
+    @Test
     void commentsSupportRepliesModerateBlockedTermsAndCollapseLongThreads() throws Exception {
         User user = userService.register("threadcommenter", "threadcommenter@example.com", "Password12!");
         MockHttpSession session = sessionFor(user);
