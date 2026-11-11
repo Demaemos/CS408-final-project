@@ -1,8 +1,10 @@
 package com.tylerandrews.lcg.service;
 
 import com.tylerandrews.lcg.model.JobPosting;
+import com.tylerandrews.lcg.repository.JobApplicationRepository;
 import com.tylerandrews.lcg.repository.JobPostingRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,9 +13,12 @@ import java.util.Optional;
 public class JobPostingService {
 
     private final JobPostingRepository jobPostingRepository;
+    private final JobApplicationRepository jobApplicationRepository;
 
-    public JobPostingService(JobPostingRepository jobPostingRepository) {
+    public JobPostingService(JobPostingRepository jobPostingRepository,
+                             JobApplicationRepository jobApplicationRepository) {
         this.jobPostingRepository = jobPostingRepository;
+        this.jobApplicationRepository = jobApplicationRepository;
     }
 
     public List<JobPosting> search(String department, String location) {
@@ -32,7 +37,9 @@ public class JobPostingService {
         return jobPostingRepository.save(jobPosting);
     }
 
+    @Transactional
     public void delete(JobPosting jobPosting) {
+        jobApplicationRepository.deleteByJob(jobPosting);
         jobPostingRepository.delete(jobPosting);
     }
 

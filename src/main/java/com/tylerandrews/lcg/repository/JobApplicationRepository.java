@@ -15,6 +15,10 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
 
     List<JobApplication> findAllByOrderBySubmittedAtDesc();
 
+    long countByJob(JobPosting job);
+
+    void deleteByJob(JobPosting job);
+
     @Query("select a from JobApplication a where a.job = :job and lower(a.email) = lower(:email) and a.referenceCode = :referenceCode")
     Optional<JobApplication> findByJobAndEmailAndReferenceCode(@Param("job") JobPosting job,
                                                              @Param("email") String email,

@@ -32,6 +32,10 @@ public class JobApplicationService {
         return jobApplicationRepository.findAllByOrderBySubmittedAtDesc();
     }
 
+    public long countByJob(JobPosting job) {
+        return jobApplicationRepository.countByJob(job);
+    }
+
     public Optional<JobApplication> findById(Long id) {
         return jobApplicationRepository.findById(id);
     }

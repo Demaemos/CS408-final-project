@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
+import java.util.Objects;
 
 @Controller
 public class GameController {
@@ -87,8 +88,41 @@ public class GameController {
             model.addAttribute("comments", commentService.findByGame(game));
             return "game-detail";
         }
+        if (commentService.containsInappropriateLanguage(form.getBody())) {
+            redirect.addFlashAttribute("commentMessage", "Your comment was removed because it contains language not allowed on this site.");
+            return "redirect:/games/" + slug;
+        }
         commentService.createGameComment(currentUser.get(), game, form.getBody());
         redirect.addFlashAttribute("commentMessage", "Comment posted.");
+        return "redirect:/games/" + slug;
+    }
+
+    @PostMapping("/games/{slug}/comments/{commentId}/replies")
+    public String addReply(@PathVariable String slug,
+                           @PathVariable Long commentId,
+                           @Valid @ModelAttribute("commentForm") CommentForm form,
+                           BindingResult result,
+                           HttpSession session,
+                           RedirectAttributes redirect) {
+        Game game = gameService.findBySlug(slug)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Game not found"));
+        Optional<User> currentUser = currentUser(session);
+        if (currentUser.isEmpty()) {
+            return "redirect:/account";
+        }
+        Comment parent = commentService.findById(commentId)
+            .filter(comment -> belongsToGame(comment, game))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+        if (result.hasErrors()) {
+            redirect.addFlashAttribute("commentMessage", "Replies must contain 1 to 2000 characters.");
+            return "redirect:/games/" + slug;
+        }
+        if (commentService.containsInappropriateLanguage(form.getBody())) {
+            redirect.addFlashAttribute("commentMessage", "Your reply was removed because it contains language not allowed on this site.");
+            return "redirect:/games/" + slug;
+        }
+        commentService.createGameReply(currentUser.get(), game, parent, form.getBody());
+        redirect.addFlashAttribute("commentMessage", "Reply posted.");
         return "redirect:/games/" + slug;
     }
 
@@ -106,8 +140,20 @@ public class GameController {
         }
         Comment comment = commentService.findById(commentId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
-        if (!commentService.canManage(currentUser.get(), comment)) {
+        if (!belongsToGame(comment, game)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found");
+        }
+        if (!commentService.canEdit(currentUser.get(), comment)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only edit your own comments.");
+        }
+        if (body == null || body.isBlank() || body.length() > 2000) {
+            redirect.addFlashAttribute("commentMessage", "Edited comments must contain 1 to 2000 characters.");
+            return "redirect:/games/" + slug;
+        }
+        if (commentService.containsInappropriateLanguage(body)) {
+            commentService.delete(comment);
+            redirect.addFlashAttribute("commentMessage", "Your comment was removed because it contains language not allowed on this site.");
+            return "redirect:/games/" + slug;
         }
         commentService.update(comment, body);
         redirect.addFlashAttribute("commentMessage", "Comment updated.");
@@ -127,7 +173,10 @@ public class GameController {
         }
         Comment comment = commentService.findById(commentId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
-        if (!commentService.canManage(currentUser.get(), comment)) {
+        if (!belongsToGame(comment, game)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found");
+        }
+        if (!commentService.canDelete(currentUser.get(), comment)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own comments.");
         }
         commentService.delete(comment);
@@ -141,5 +190,9 @@ public class GameController {
             return Optional.empty();
         }
         return userService.findById(id);
+    }
+
+    private boolean belongsToGame(Comment comment, Game game) {
+        return comment.getGame() != null && Objects.equals(comment.getGame().getId(), game.getId());
     }
 }

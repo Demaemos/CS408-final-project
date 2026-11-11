@@ -125,7 +125,60 @@ class AdminControllerTest {
         mockMvc.perform(get("/admin").session(sessionFor(admin)))
             .andExpect(status().isOk())
             .andExpect(view().name("admin/dashboard"))
-            .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard Test Applicant")));
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard Test Applicant")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Dashboard Test Role")));
+    }
+
+    @Test
+    void adminsCanRemoveOnlyRejectedApplications() throws Exception {
+        User admin = userService.createAdmin("applicationremoveadmin", "applicationremoveadmin@example.com", "admin-password");
+        JobPosting job = new JobPosting();
+        job.setTitle("Application Removal Role");
+        job = jobPostingRepository.save(job);
+
+        JobApplication application = new JobApplication();
+        application.setJob(job);
+        application.setApplicantName("Applicant to Remove");
+        application.setEmail("remove@example.com");
+        application.setReferenceCode("LCG-REMOVE1");
+        application = jobApplicationRepository.save(application);
+        MockHttpSession session = sessionFor(admin);
+
+        mockMvc.perform(post("/admin/applications/" + application.getId() + "/delete").session(session))
+            .andExpect(status().is3xxRedirection());
+        assertThat(jobApplicationRepository.findById(application.getId())).isPresent();
+
+        mockMvc.perform(post("/admin/applications/" + application.getId() + "/status")
+                .session(session)
+                .param("status", "REJECTED"))
+            .andExpect(status().is3xxRedirection());
+        mockMvc.perform(post("/admin/applications/" + application.getId() + "/delete").session(session))
+            .andExpect(status().is3xxRedirection());
+        assertThat(jobApplicationRepository.findById(application.getId())).isEmpty();
+    }
+
+    @Test
+    void deletingAJobAlsoDeletesItsApplicationsAndShowsWarning() throws Exception {
+        User admin = userService.createAdmin("jobdeleteadmin", "jobdeleteadmin@example.com", "admin-password");
+        JobPosting job = new JobPosting();
+        job.setTitle("Job With Applicants");
+        job = jobPostingRepository.save(job);
+        JobApplication application = new JobApplication();
+        application.setJob(job);
+        application.setApplicantName("Applicant Record");
+        application.setEmail("jobapplicant@example.com");
+        application.setReferenceCode("LCG-JOBDEL1");
+        application = jobApplicationRepository.save(application);
+        MockHttpSession session = sessionFor(admin);
+
+        mockMvc.perform(get("/admin").session(session))
+            .andExpect(status().isOk())
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("Deleting it will also permanently remove the associated applicant records.")));
+
+        mockMvc.perform(post("/admin/jobs/" + job.getId() + "/delete").session(session))
+            .andExpect(status().is3xxRedirection());
+        assertThat(jobPostingRepository.findById(job.getId())).isEmpty();
+        assertThat(jobApplicationRepository.findById(application.getId())).isEmpty();
     }
 
     @Test

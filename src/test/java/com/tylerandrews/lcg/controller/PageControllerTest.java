@@ -260,10 +260,7 @@ class PageControllerTest {
     @Test
     void loggedInUsersCanPostAndDeleteComments() throws Exception {
         User user = userService.register("commenter", "commenter@example.com", "Password12!");
-        MockHttpSession session = new MockHttpSession();
-        session.setAttribute(SessionKeys.USER_ID, user.getId());
-        session.setAttribute(SessionKeys.USERNAME, user.getUsername());
-        session.setAttribute(SessionKeys.ROLE, user.getRole().name());
+        MockHttpSession session = sessionFor(user);
 
         mockMvc.perform(post("/games/untitled-project-one/comments")
                 .session(session)
@@ -273,5 +270,77 @@ class PageControllerTest {
 
         Game game = gameRepository.findBySlug("untitled-project-one").orElseThrow();
         assertThat(commentRepository.findByGameOrderByCreatedAtAsc(game)).hasSize(1);
+    }
+
+    @Test
+    void commentsSupportRepliesModerateBlockedTermsAndCollapseLongThreads() throws Exception {
+        User user = userService.register("threadcommenter", "threadcommenter@example.com", "Password12!");
+        MockHttpSession session = sessionFor(user);
+
+        mockMvc.perform(post("/games/untitled-project-one/comments")
+                .session(session)
+                .param("body", "A top-level comment"))
+            .andExpect(status().is3xxRedirection());
+
+        Game game = gameRepository.findBySlug("untitled-project-one").orElseThrow();
+        var root = commentRepository.findByGameOrderByCreatedAtAsc(game).get(0);
+        for (int i = 0; i < 5; i++) {
+            mockMvc.perform(post("/games/untitled-project-one/comments/" + root.getId() + "/replies")
+                    .session(session)
+                    .param("body", "Reply " + i))
+                .andExpect(status().is3xxRedirection());
+        }
+
+        mockMvc.perform(post("/games/untitled-project-one/comments")
+                .session(session)
+                .param("body", "This contains FUCK! language"))
+            .andExpect(status().is3xxRedirection());
+
+        assertThat(commentRepository.findByGameOrderByCreatedAtAsc(game)).hasSize(6);
+        mockMvc.perform(get("/games/untitled-project-one"))
+            .andExpect(status().isOk())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("Show")))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("more replies")))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("FUCK"))));
+    }
+
+    @Test
+    void adminsCanDeleteCommentsButCannotEditThem() throws Exception {
+        User author = userService.register("commentauthor", "commentauthor@example.com", "Password12!");
+        User admin = userService.createAdmin("commentadmin", "commentadmin@example.com", "admin-password");
+        Game game = gameRepository.findBySlug("untitled-project-one").orElseThrow();
+        var comment = new com.tylerandrews.lcg.model.Comment();
+        comment.setUser(author);
+        comment.setGame(game);
+        comment.setBody("A comment");
+        comment = commentRepository.save(comment);
+        var reply = new com.tylerandrews.lcg.model.Comment();
+        reply.setUser(author);
+        reply.setGame(game);
+        reply.setParent(comment);
+        reply.setBody("A reply");
+        reply = commentRepository.save(reply);
+
+        mockMvc.perform(post("/games/untitled-project-one/comments/" + comment.getId() + "/edit")
+                .session(sessionFor(admin))
+                .param("body", "Admin changed this"))
+            .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/games/untitled-project-one/comments/" + comment.getId() + "/delete")
+                .session(sessionFor(admin)))
+            .andExpect(status().is3xxRedirection());
+        assertThat(commentRepository.findById(comment.getId())).isEmpty();
+        assertThat(commentRepository.findById(reply.getId())).isEmpty();
+    }
+
+    private MockHttpSession sessionFor(User user) {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(SessionKeys.USER_ID, user.getId());
+        session.setAttribute(SessionKeys.USERNAME, user.getUsername());
+        session.setAttribute(SessionKeys.ROLE, user.getRole().name());
+        return session;
     }
 }

@@ -44,7 +44,7 @@
         <div th:if="${#lists.isEmpty(jobs)}" class="alert alert-info">No jobs yet.</div>
         <div class="table-responsive" th:unless="${#lists.isEmpty(jobs)}">
             <table class="table align-middle">
-                <thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Applications</th><th>Actions</th></tr></thead>
                 <tbody>
                 <tr th:each="job : ${jobs}">
                     <td th:text="${job.title}">Gameplay Engineer</td>
@@ -52,10 +52,12 @@
                     <td>
                         <span class="badge" th:text="${job.open ? 'Open' : 'Closed'}" th:classappend="${job.open ? 'bg-success' : 'bg-secondary'}">Open</span>
                     </td>
+                    <td th:text="${applicationCounts[job.id]}">0</td>
                     <td class="d-flex gap-2">
                         <a class="btn btn-sm btn-outline-primary" th:href="@{/admin/jobs/{id}/edit(id=${job.id})}">Edit</a>
                         <form method="post" th:action="@{/admin/jobs/{id}/delete(id=${job.id})}"
-                              onsubmit="return confirm('Delete this job posting?');">
+                              onsubmit="return confirm(this.dataset.confirmMessage);"
+                              th:attr="data-confirm-message=${applicationCounts[job.id] > 0 ? 'This job has ' + applicationCounts[job.id] + ' application(s). Deleting it will also permanently remove the associated applicant records. Continue?' : 'Delete this job posting?'}">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
                     </td>
@@ -70,11 +72,12 @@
         <div th:if="${#lists.isEmpty(applications)}" class="alert alert-info">No applications yet.</div>
         <div class="table-responsive" th:unless="${#lists.isEmpty(applications)}">
             <table class="table align-middle">
-                <thead><tr><th>Applicant</th><th>Role</th><th>Status</th><th>Reference</th><th>Actions</th></tr></thead>
+                <thead><tr><th>Applicant</th><th>Job posting</th><th>Email</th><th>Status</th><th>Reference</th><th>Actions</th></tr></thead>
                 <tbody>
                 <tr th:each="jobApplication : ${applications}">
                     <td th:text="${jobApplication.applicantName}">Applicant</td>
                     <td th:text="${jobApplication.job.title}">Role</td>
+                    <td th:text="${jobApplication.email}">email@example.com</td>
                     <td>
                         <form method="post" th:action="@{/admin/applications/{id}/status(id=${jobApplication.id})}">
                             <select name="status" class="form-select form-select-sm">
@@ -87,7 +90,14 @@
                         </form>
                     </td>
                     <td><code th:text="${jobApplication.referenceCode}">LCG-123</code></td>
-                    <td th:text="${jobApplication.email}">email@example.com</td>
+                    <td>
+                        <form method="post"
+                              th:if="${jobApplication.status.name() == 'REJECTED'}"
+                              th:action="@{/admin/applications/{id}/delete(id=${jobApplication.id})}"
+                              onsubmit="return confirm('Remove this rejected application?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                        </form>
+                    </td>
                 </tr>
                 </tbody>
             </table>

@@ -24,6 +24,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Optional;
+import java.util.Objects;
 
 @Controller
 public class NewsController {
@@ -86,8 +87,41 @@ public class NewsController {
             model.addAttribute("comments", commentService.findByNewsPost(post));
             return "news-detail";
         }
+        if (commentService.containsInappropriateLanguage(form.getBody())) {
+            redirect.addFlashAttribute("commentMessage", "Your comment was removed because it contains language not allowed on this site.");
+            return "redirect:/news/" + slug;
+        }
         commentService.createNewsComment(currentUser.get(), post, form.getBody());
         redirect.addFlashAttribute("commentMessage", "Comment posted.");
+        return "redirect:/news/" + slug;
+    }
+
+    @PostMapping("/news/{slug}/comments/{commentId}/replies")
+    public String addReply(@PathVariable String slug,
+                           @PathVariable Long commentId,
+                           @Valid @ModelAttribute("commentForm") CommentForm form,
+                           BindingResult result,
+                           HttpSession session,
+                           RedirectAttributes redirect) {
+        NewsPost post = newsPostService.findBySlug(slug)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "News post not found"));
+        Optional<User> currentUser = currentUser(session);
+        if (currentUser.isEmpty()) {
+            return "redirect:/account";
+        }
+        Comment parent = commentService.findById(commentId)
+            .filter(comment -> belongsToNewsPost(comment, post))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
+        if (result.hasErrors()) {
+            redirect.addFlashAttribute("commentMessage", "Replies must contain 1 to 2000 characters.");
+            return "redirect:/news/" + slug;
+        }
+        if (commentService.containsInappropriateLanguage(form.getBody())) {
+            redirect.addFlashAttribute("commentMessage", "Your reply was removed because it contains language not allowed on this site.");
+            return "redirect:/news/" + slug;
+        }
+        commentService.createNewsReply(currentUser.get(), post, parent, form.getBody());
+        redirect.addFlashAttribute("commentMessage", "Reply posted.");
         return "redirect:/news/" + slug;
     }
 
@@ -105,8 +139,20 @@ public class NewsController {
         }
         Comment comment = commentService.findById(commentId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
-        if (!commentService.canManage(currentUser.get(), comment)) {
+        if (!belongsToNewsPost(comment, post)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found");
+        }
+        if (!commentService.canEdit(currentUser.get(), comment)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only edit your own comments.");
+        }
+        if (body == null || body.isBlank() || body.length() > 2000) {
+            redirect.addFlashAttribute("commentMessage", "Edited comments must contain 1 to 2000 characters.");
+            return "redirect:/news/" + slug;
+        }
+        if (commentService.containsInappropriateLanguage(body)) {
+            commentService.delete(comment);
+            redirect.addFlashAttribute("commentMessage", "Your comment was removed because it contains language not allowed on this site.");
+            return "redirect:/news/" + slug;
         }
         commentService.update(comment, body);
         redirect.addFlashAttribute("commentMessage", "Comment updated.");
@@ -126,7 +172,10 @@ public class NewsController {
         }
         Comment comment = commentService.findById(commentId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found"));
-        if (!commentService.canManage(currentUser.get(), comment)) {
+        if (!belongsToNewsPost(comment, post)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found");
+        }
+        if (!commentService.canDelete(currentUser.get(), comment)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own comments.");
         }
         commentService.delete(comment);
@@ -140,5 +189,9 @@ public class NewsController {
             return Optional.empty();
         }
         return userService.findById(id);
+    }
+
+    private boolean belongsToNewsPost(Comment comment, NewsPost post) {
+        return comment.getNewsPost() != null && Objects.equals(comment.getNewsPost().getId(), post.getId());
     }
 }

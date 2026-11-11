@@ -10,4 +10,5 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByGameOrderByCreatedAtAsc(Game game);
     List<Comment> findByNewsPostOrderByCreatedAtAsc(NewsPost newsPost);
+    List<Comment> findByParentOrderByCreatedAtAsc(Comment parent);
 }

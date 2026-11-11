@@ -66,7 +66,10 @@ public class AdminController {
     public String dashboard(Model model) {
         model.addAttribute("games", gameService.allGames());
         model.addAttribute("posts", newsPostService.latest(5));
-        model.addAttribute("jobs", jobPostingService.allJobs());
+        var jobs = jobPostingService.allJobs();
+        model.addAttribute("jobs", jobs);
+        model.addAttribute("applicationCounts", jobs.stream().collect(Collectors.toMap(
+            JobPosting::getId, jobApplicationService::countByJob)));
         model.addAttribute("applications", jobApplicationService.findAll());
         return "admin/dashboard";
     }
@@ -149,6 +152,19 @@ public class AdminController {
         } catch (IllegalArgumentException ex) {
             redirect.addFlashAttribute("message", "Invalid status value.");
         }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/admin/applications/{id}/delete")
+    public String deleteApplication(@PathVariable Long id, RedirectAttributes redirect) {
+        JobApplication application = jobApplicationService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Application not found"));
+        if (application.getStatus() != JobApplication.Status.REJECTED) {
+            redirect.addFlashAttribute("message", "Only rejected applications can be removed.");
+            return "redirect:/admin";
+        }
+        jobApplicationService.withdraw(application);
+        redirect.addFlashAttribute("message", "Rejected application removed.");
         return "redirect:/admin";
     }
 

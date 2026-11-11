@@ -73,22 +73,11 @@
 
         <div th:if="${#lists.isEmpty(comments)}" class="alert alert-light border">No comments yet.</div>
 
-        <div class="list-group" th:unless="${#lists.isEmpty(comments)}">
-            <div class="list-group-item" th:each="comment : ${comments}">
-                <div class="d-flex justify-content-between">
-                    <strong th:text="${comment.user.username}">User</strong>
-                    <small class="text-muted" th:text="${#temporals.format(comment.createdAt, 'MMMM d, yyyy')}">Date</small>
-                </div>
-                <div class="mt-2" th:text="${comment.body}">Body</div>
-                <div class="mt-3" th:if="${session.userId != null and (session.role == 'ADMIN' or comment.user.id == session.userId)}">
-                    <form th:action="@{/games/{slug}/comments/{commentId}/edit(slug=${game.slug}, commentId=${comment.id})}" method="post" class="mb-2">
-                        <textarea name="body" class="form-control mb-2" rows="3" th:text="${comment.body}"></textarea>
-                        <button type="submit" class="btn btn-sm btn-outline-primary">Save edit</button>
-                    </form>
-                    <form th:action="@{/games/{slug}/comments/{commentId}/delete(slug=${game.slug}, commentId=${comment.id})}" method="post">
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this comment?');">Delete</button>
-                    </form>
-                </div>
+        <div class="mt-3" th:unless="${#lists.isEmpty(comments)}">
+            <div th:with="commentBase=@{/games/{slug}(slug=${game.slug})}">
+                <th:block th:each="comment : ${comments}">
+                    <div th:replace="~{fragments/comments :: thread(comment=${comment}, commentBase=${commentBase}, depth=0)}"></div>
+                </th:block>
             </div>
         </div>
     </section>

@@ -2,6 +2,8 @@ package com.tylerandrews.lcg.model;
  
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
  
 @Entity
 @Table(name = "comments")
@@ -23,6 +25,13 @@ public class Comment {
     @JoinColumn(name = "news_post_id")
     private NewsPost newsPost;
  
+    @ManyToOne
+    @JoinColumn(name = "parent_id")
+    private Comment parent;
+
+    @Transient
+    private List<Comment> replies = new ArrayList<>();
+
     @Column(nullable = false, length = 2000)
     private String body;
  
@@ -37,6 +46,10 @@ public class Comment {
     public void setGame(Game game) { this.game = game; }
     public NewsPost getNewsPost() { return newsPost; }
     public void setNewsPost(NewsPost newsPost) { this.newsPost = newsPost; }
+    public Comment getParent() { return parent; }
+    public void setParent(Comment parent) { this.parent = parent; }
+    public List<Comment> getReplies() { return replies; }
+    public void setReplies(List<Comment> replies) { this.replies = replies; }
     public String getBody() { return body; }
     public void setBody(String body) { this.body = body; }
     public LocalDateTime getCreatedAt() { return createdAt; }
