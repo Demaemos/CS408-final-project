@@ -38,7 +38,7 @@ if [ -z "${DB_PASSWORD}" ]; then
   printf '\nSPRING_DATASOURCE_PASSWORD=%s\n' "${DB_PASSWORD}" >> "${ENV_DIR}/app.env"
 fi
 if ! grep -q '^SPRING_DATASOURCE_URL=' "${ENV_DIR}/app.env"; then
-  printf 'SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/lcg?useSSL=false&serverTimezone=UTC\n' >> "${ENV_DIR}/app.env"
+  printf 'SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/lcg?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true\n' >> "${ENV_DIR}/app.env"
 fi
 if ! grep -q '^SPRING_DATASOURCE_USERNAME=' "${ENV_DIR}/app.env"; then
   printf 'SPRING_DATASOURCE_USERNAME=lcg_app\n' >> "${ENV_DIR}/app.env"
