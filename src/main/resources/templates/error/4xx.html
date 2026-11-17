@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Request Error')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+<main class="container page-shell text-center error-page">
+    <p class="eyebrow">Request error</p>
+    <h1 th:text="${status}">400</h1>
+    <p class="lead">We couldn’t complete that request. Check the details and try again.</p>
+    <a class="btn btn-primary" href="/">Back to home</a>
+</main>
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

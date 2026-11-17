@@ -103,7 +103,7 @@ public class DataSeeder implements CommandLineRunner {
             devlog.setSlug("production-update-prototype-playtest-week");
             devlog.setBody("Our team wrapped a full prototype playtest and captured notes on pacing, combat clarity, and onboarding. We’re tuning the early loop before we lock the next milestone.");
             devlog.setTags("devlog,production,prototype");
-            devlog.setImage("/images/devlog-placeholder.jpg");
+            devlog.setImage("/images/community-orbit.svg");
             newsPostRepository.save(devlog);
 
             NewsPost announcement = new NewsPost();
@@ -111,9 +111,11 @@ public class DataSeeder implements CommandLineRunner {
             announcement.setSlug("studio-roadmap-worldbuilding-and-art-direction");
             announcement.setBody("We’re expanding the world bible, refining our visual direction, and preparing a larger set of playable screens for the next build.");
             announcement.setTags("announcement,art,design");
-            announcement.setImage("/images/announcement-placeholder.jpg");
+            announcement.setImage("/images/community-orbit.svg");
             newsPostRepository.save(announcement);
         }
+        replaceLegacyNewsArt("production-update-prototype-playtest-week", "/images/devlog-placeholder.jpg");
+        replaceLegacyNewsArt("studio-roadmap-worldbuilding-and-art-direction", "/images/announcement-placeholder.jpg");
 
         if (jobPostingRepository.count() == 0) {
             JobPosting job = new JobPosting();
@@ -163,6 +165,7 @@ public class DataSeeder implements CommandLineRunner {
         game.setDescription(PLACEHOLDER_DESCRIPTION);
         game.setReleaseStatus(status);
         game.setEsrbRating(esrbRating);
+        game.setCoverImage("/images/game-world.svg");
         for (String name : genreNames) {
             game.getGenres().add(genre(name));
         }
@@ -170,5 +173,14 @@ public class DataSeeder implements CommandLineRunner {
             game.getPlatforms().add(platform(name));
         }
         gameRepository.save(game);
+    }
+
+    private void replaceLegacyNewsArt(String slug, String legacyImage) {
+        newsPostRepository.findBySlug(slug)
+            .filter(post -> legacyImage.equals(post.getImage()))
+            .ifPresent(post -> {
+                post.setImage("/images/community-orbit.svg");
+                newsPostRepository.save(post);
+            });
     }
 }

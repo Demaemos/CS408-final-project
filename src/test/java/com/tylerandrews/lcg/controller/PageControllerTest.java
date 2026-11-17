@@ -4,12 +4,14 @@ import com.tylerandrews.lcg.config.SessionKeys;
 import com.tylerandrews.lcg.model.Game;
 import com.tylerandrews.lcg.model.JobPosting;
 import com.tylerandrews.lcg.model.NewsPost;
+import com.tylerandrews.lcg.model.SupportTicket;
 import com.tylerandrews.lcg.model.User;
 import com.tylerandrews.lcg.repository.CommentRepository;
 import com.tylerandrews.lcg.repository.GameRepository;
 import com.tylerandrews.lcg.repository.JobApplicationRepository;
 import com.tylerandrews.lcg.repository.JobPostingRepository;
 import com.tylerandrews.lcg.repository.NewsPostRepository;
+import com.tylerandrews.lcg.repository.SupportTicketRepository;
 import com.tylerandrews.lcg.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.mock.web.MockHttpSession;
+import jakarta.servlet.RequestDispatcher;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -44,6 +48,8 @@ class PageControllerTest {
     @Autowired
     private NewsPostRepository newsPostRepository;
     @Autowired
+    private SupportTicketRepository supportTicketRepository;
+    @Autowired
     private JobPostingRepository jobPostingRepository;
     @Autowired
     private JobApplicationRepository jobApplicationRepository;
@@ -62,10 +68,84 @@ class PageControllerTest {
     }
 
     @Test
+    void contactTicketsAreValidatedAndPersistedForAdminManagement() throws Exception {
+        mockMvc.perform(get("/contact"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("contact"))
+            .andExpect(model().attributeExists("ticketForm", "games"));
+
+        mockMvc.perform(post("/contact")
+                .param("name", "")
+                .param("email", "not-an-email")
+                .param("topic", "")
+                .param("message", ""))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeHasFieldErrors("ticketForm", "name", "email", "topic", "message"));
+        assertThat(supportTicketRepository.count()).isZero();
+
+        mockMvc.perform(post("/contact")
+                .param("name", "Taylor Player")
+                .param("email", "TAYLOR@example.com")
+                .param("topic", "Game support")
+                .param("gameId", gameRepository.findBySlug("untitled-project-one").orElseThrow().getId().toString())
+                .param("message", "I need help with a game."))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/contact"));
+
+        SupportTicket ticket = supportTicketRepository.findAll().get(0);
+        assertThat(ticket.getEmail()).isEqualTo("taylor@example.com");
+        assertThat(ticket.getGame().getSlug()).isEqualTo("untitled-project-one");
+
+        User admin = userService.createAdmin("ticketadmin", "ticketadmin@example.com", "admin-password");
+        mockMvc.perform(post("/admin/tickets/" + ticket.getId())
+                .session(sessionFor(admin))
+                .param("status", "RESOLVED")
+                .param("adminNote", "Replied to the player."))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/admin"));
+
+        SupportTicket resolved = supportTicketRepository.findById(ticket.getId()).orElseThrow();
+        assertThat(resolved.getStatus()).isEqualTo(SupportTicket.Status.RESOLVED);
+        assertThat(resolved.getAdminNote()).isEqualTo("Replied to the player.");
+
+        mockMvc.perform(get("/admin").session(sessionFor(admin))
+                .param("ticketStatus", "RESOLVED")
+                .param("ticketEmail", "taylor@example.com")
+                .param("ticketFrom", java.time.LocalDate.now().toString())
+                .param("ticketThrough", java.time.LocalDate.now().toString()))
+            .andExpect(status().isOk())
+            .andExpect(view().name("admin/dashboard"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("I need help with a game.")));
+
+        mockMvc.perform(post("/admin/tickets/" + ticket.getId() + "/delete").session(sessionFor(admin)))
+            .andExpect(status().is3xxRedirection());
+        assertThat(supportTicketRepository.findById(ticket.getId())).isEmpty();
+    }
+
+    @Test
+    void communityShowsPersistedCommentsAndFiltersByGame() throws Exception {
+        User user = userService.register("communityplayer", "community@example.com", "Password12!");
+        mockMvc.perform(post("/games/untitled-project-one/comments")
+                .session(sessionFor(user))
+                .param("body", "Hello from the community"))
+            .andExpect(status().is3xxRedirection());
+
+        Game game = gameRepository.findBySlug("untitled-project-one").orElseThrow();
+        mockMvc.perform(get("/community").param("game", game.getId().toString()))
+            .andExpect(status().isOk())
+            .andExpect(view().name("community"))
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("Hello from the community")))
+            .andExpect(model().attributeExists("games", "communityPosts", "selectedGame"));
+    }
+
+    @Test
     void homePageLoads() throws Exception {
         mockMvc.perform(get("/"))
             .andExpect(status().isOk())
-            .andExpect(view().name("home"));
+            .andExpect(view().name("home"))
+            .andExpect(model().attributeExists("featuredGames", "latestNews"));
     }
 
     @Test
@@ -128,6 +208,16 @@ class PageControllerTest {
     void gameDetailReturns404ForUnknownSlug() throws Exception {
         mockMvc.perform(get("/games/no-such-game"))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void customNotFoundPageRendersForServletErrorDispatch() throws Exception {
+        mockMvc.perform(get("/error")
+                .accept(MediaType.TEXT_HTML)
+                .requestAttr(RequestDispatcher.ERROR_STATUS_CODE, 404))
+            .andExpect(status().isNotFound())
+            .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
+                .string(org.hamcrest.Matchers.containsString("Page not found")));
     }
 
     @Test

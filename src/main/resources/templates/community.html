@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Community')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container page-shell">
+    <section class="community-hero rounded-4 mb-5">
+        <div class="community-hero-copy">
+            <p class="eyebrow">Made better together</p>
+            <h1>Community</h1>
+            <p class="lead">Meet the players, share a thought, and follow the conversations around our games.</p>
+            <a class="btn btn-primary" href="/games">Explore the games</a>
+        </div>
+        <img src="/images/community-orbit.svg" alt="" class="community-hero-art">
+    </section>
+
+    <section aria-labelledby="community-posts-heading">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3 mb-4">
+            <div>
+                <p class="eyebrow mb-1">Player conversations</p>
+                <h2 id="community-posts-heading" class="mb-0">From the community</h2>
+            </div>
+            <form method="get" action="/community" class="d-flex gap-2 community-filter">
+                <label for="community-game" class="visually-hidden">Filter by game</label>
+                <select id="community-game" name="game" class="form-select">
+                    <option value="">All games &amp; devlogs</option>
+                    <option th:each="game : ${games}" th:value="${game.id}" th:text="${game.title}"
+                            th:selected="${selectedGame == game.id}">Game</option>
+                </select>
+                <button class="btn btn-outline-primary" type="submit">Filter</button>
+            </form>
+        </div>
+
+        <div class="alert alert-info" th:if="${#lists.isEmpty(communityPosts)}">
+            No conversations here yet. Visit a game or devlog and leave the first comment.
+        </div>
+        <div class="community-feed" th:unless="${#lists.isEmpty(communityPosts)}">
+            <article class="community-post surface-card p-4" th:each="post : ${communityPosts}">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                    <div>
+                        <strong th:text="${post.user.username}">Player</strong>
+                        <span class="text-muted"> shared a thought</span>
+                    </div>
+                    <time class="small text-muted text-nowrap"
+                          th:datetime="${post.createdAt}" th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy')}">Date</time>
+                </div>
+                <p class="community-post-body mb-3" th:text="${post.body}">Community post</p>
+                <a class="small text-decoration-none"
+                   th:if="${post.game != null}"
+                   th:href="@{/games/{slug}(slug=${post.game.slug})}"
+                   th:text="'On ' + ${post.game.title} + ' →'">On a game</a>
+                <a class="small text-decoration-none"
+                   th:if="${post.newsPost != null}"
+                   th:href="@{/news/{slug}(slug=${post.newsPost.slug})}"
+                   th:text="'On ' + ${post.newsPost.title} + ' →'">On a devlog</a>
+            </article>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

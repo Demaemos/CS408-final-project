@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 560" role="img" aria-labelledby="title desc">
+  <title id="title">A bright world of shared adventures</title>
+  <desc id="desc">Original abstract illustration of a coral sun, floating islands, and a tiny sailboat.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8c79b"/>
+      <stop offset=".55" stop-color="#f7e5bc"/>
+      <stop offset="1" stop-color="#b5d5c9"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#4f9490"/>
+      <stop offset="1" stop-color="#1d5960"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="560" fill="url(#sky)"/>
+  <circle cx="720" cy="145" r="82" fill="#ed6a4e"/>
+  <circle cx="720" cy="145" r="112" fill="none" stroke="#fff4d8" stroke-opacity=".55" stroke-width="2"/>
+  <path d="M0 335 128 269l114 42 122-111 109 93 126-58 126 78 109-66 126 76v237H0Z" fill="#668a75"/>
+  <path d="m0 391 164-76 147 61 133-88 151 96 138-65 115 56 112-57v242H0Z" fill="#426d65"/>
+  <path d="M0 428c135-23 208 32 333 4s207-23 318 1 199-24 309 0v127H0Z" fill="url(#water)"/>
+  <path d="M94 214c25-26 71-28 97-3 15-35 77-41 103-4 42-8 71 17 70 46H84c-3-15 0-28 10-39Z" fill="#fffefa" fill-opacity=".72"/>
+  <path d="M565 262c18-23 55-24 74-2 12-29 63-35 84-3 35-7 58 14 57 37H557c-2-12 0-23 8-32Z" fill="#fffefa" fill-opacity=".64"/>
+  <path d="m432 433 92 0-47 20-45-20Z" fill="#f3d9ac"/>
+  <path d="M474 349v79l-50-12 50-67Z" fill="#fffefa"/>
+  <path d="M480 365v63l48-13-48-50Z" fill="#ed6a4e"/>
+  <path d="M470 430h20v7h-20z" fill="#172228"/>
+  <path d="M0 491c133-18 205 14 314-2s204-19 320-1 214-15 326-3" fill="none" stroke="#d4e4d7" stroke-opacity=".55" stroke-width="3"/>
+  <circle cx="198" cy="130" r="6" fill="#1d5960"/>
+  <circle cx="236" cy="151" r="4" fill="#ed6a4e"/>
+  <circle cx="859" cy="273" r="5" fill="#1d5960"/>
+</svg>

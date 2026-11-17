@@ -5,6 +5,8 @@ import com.tylerandrews.lcg.model.Game;
 import com.tylerandrews.lcg.model.NewsPost;
 import com.tylerandrews.lcg.model.User;
 import com.tylerandrews.lcg.repository.CommentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,10 @@ public class CommentService {
 
     public List<Comment> findByNewsPost(NewsPost newsPost) {
         return organizeThreads(commentRepository.findByNewsPostOrderByCreatedAtAsc(newsPost));
+    }
+
+    public List<Comment> communityPosts(Game game) {
+        return commentRepository.findCommunityPosts(game, PageRequest.of(0, 30)).getContent();
     }
 
     public Optional<Comment> findById(Long id) {

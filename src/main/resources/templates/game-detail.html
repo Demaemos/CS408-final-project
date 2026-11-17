@@ -20,9 +20,9 @@
                       th:text="'ESRB ' + ${game.esrbRating}">ESRB</span>
             </div>
 
-            <div class="bg-secondary-subtle rounded p-5 text-center text-muted mb-4">
-                Artwork and trailer coming soon
-            </div>
+            <img class="img-fluid rounded-4 game-detail-art mb-4"
+                 th:src="${game.coverImage != null and !#strings.isEmpty(game.coverImage)} ? ${game.coverImage} : @{/images/game-world.svg}"
+                 th:alt="${game.title} + ' artwork'">
 
             <h2 class="h4">About this game</h2>
             <p th:text="${game.description}">Description</p>

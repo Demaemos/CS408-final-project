@@ -1,6 +1,8 @@
 package com.tylerandrews.lcg.model;
  
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.time.LocalDateTime;
  
 @Entity
@@ -19,9 +21,11 @@ public class SupportTicket {
     @Column(nullable = false)
     private String email;
  
+    @Column(nullable = false)
     private String topic;
  
     @ManyToOne
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "game_id")
     private Game game;
  
@@ -29,6 +33,7 @@ public class SupportTicket {
     private String message;
  
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Status status = Status.OPEN;
  
     @Column(length = 2000)

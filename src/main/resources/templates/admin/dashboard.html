@@ -4,7 +4,7 @@
 <body>
 <nav th:replace="~{fragments/header :: navbar}"></nav>
 
-<main class="container my-5">
+<main class="container my-5 admin-dashboard">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Admin Dashboard</h1>
         <div class="d-flex gap-2">
@@ -102,6 +102,91 @@
                 </tbody>
             </table>
         </div>
+    </section>
+
+    <section aria-labelledby="tickets-heading" class="mb-5">
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-3">
+            <div>
+                <h2 id="tickets-heading" class="h4 mb-0">Support Tickets</h2>
+                <p class="text-muted small mb-0">Filter by status, email, or submission date.</p>
+            </div>
+            <form method="get" action="/admin" class="row g-2 align-items-end">
+                <div class="col-sm-6 col-lg-auto">
+                    <label class="form-label small" for="ticket-status">Status</label>
+                    <select class="form-select form-select-sm" id="ticket-status" name="ticketStatus">
+                        <option value="">All statuses</option>
+                        <option th:each="status : ${ticketStatuses}" th:value="${status}" th:text="${status}"
+                                th:selected="${status == selectedTicketStatus}">Open</option>
+                    </select>
+                </div>
+                <div class="col-sm-6 col-lg-auto">
+                    <label class="form-label small" for="ticket-email">Email</label>
+                    <input class="form-control form-control-sm" id="ticket-email" name="ticketEmail"
+                           type="search" th:value="${ticketEmail}" placeholder="Search email">
+                </div>
+                <div class="col-sm-6 col-lg-auto">
+                    <label class="form-label small" for="ticket-from">From</label>
+                    <input class="form-control form-control-sm" id="ticket-from" name="ticketFrom" type="date"
+                           th:value="${ticketFrom}">
+                </div>
+                <div class="col-sm-6 col-lg-auto">
+                    <label class="form-label small" for="ticket-through">Through</label>
+                    <input class="form-control form-control-sm" id="ticket-through" name="ticketThrough" type="date"
+                           th:value="${ticketThrough}">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+        <div th:if="${ticketPage.empty}" class="alert alert-info">No support tickets match those filters.</div>
+        <div class="table-responsive" th:unless="${ticketPage.empty}">
+            <table class="table align-middle">
+                <thead><tr><th>Request</th><th>Contact</th><th>Game</th><th>Submitted</th><th>Status &amp; notes</th><th>Actions</th></tr></thead>
+                <tbody>
+                <tr th:each="ticket : ${ticketPage.content}">
+                    <td>
+                        <strong th:text="${ticket.topic}">Topic</strong>
+                        <p class="small text-muted mb-0 ticket-message" th:text="${ticket.message}">Message</p>
+                    </td>
+                    <td><span th:text="${ticket.name}">Name</span><br><span class="small" th:text="${ticket.email}">email</span></td>
+                    <td th:text="${ticket.game != null ? ticket.game.title : '—'}">Game</td>
+                    <td class="text-nowrap" th:text="${#temporals.format(ticket.createdAt, 'yyyy-MM-dd HH:mm')}">Date</td>
+                    <td>
+                        <form method="post" th:action="@{/admin/tickets/{id}(id=${ticket.id})}">
+                            <label class="visually-hidden" th:for="'ticket-status-' + ${ticket.id}">Ticket status</label>
+                            <select class="form-select form-select-sm mb-2" name="status"
+                                    th:id="'ticket-status-' + ${ticket.id}">
+                                <option th:each="status : ${ticketStatuses}" th:value="${status}" th:text="${status}"
+                                        th:selected="${status == ticket.status}">Open</option>
+                            </select>
+                            <label class="visually-hidden" th:for="'ticket-note-' + ${ticket.id}">Admin note</label>
+                            <textarea class="form-control form-control-sm" rows="2" name="adminNote"
+                                      th:id="'ticket-note-' + ${ticket.id}" maxlength="2000"
+                                      placeholder="Internal note" th:text="${ticket.adminNote}"></textarea>
+                            <button type="submit" class="btn btn-sm btn-primary mt-2">Save</button>
+                        </form>
+                    </td>
+                    <td>
+                        <form method="post" th:action="@{/admin/tickets/{id}/delete(id=${ticket.id})}"
+                              onsubmit="return confirm('Permanently delete this ticket?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <nav th:if="${ticketPage.totalPages > 1}" aria-label="Ticket pages">
+            <ul class="pagination pagination-sm">
+                <li class="page-item" th:classappend="${ticketPage.first ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/admin(ticketPage=${ticketPage.number - 1}, ticketStatus=${selectedTicketStatus}, ticketEmail=${ticketEmail}, ticketFrom=${ticketFrom}, ticketThrough=${ticketThrough})}">Previous</a>
+                </li>
+                <li class="page-item" th:classappend="${ticketPage.last ? 'disabled' : ''}">
+                    <a class="page-link" th:href="@{/admin(ticketPage=${ticketPage.number + 1}, ticketStatus=${selectedTicketStatus}, ticketEmail=${ticketEmail}, ticketFrom=${ticketFrom}, ticketThrough=${ticketThrough})}">Next</a>
+                </li>
+            </ul>
+        </nav>
     </section>
 
     <section aria-labelledby="news-heading">

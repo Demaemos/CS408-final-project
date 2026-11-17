@@ -14,8 +14,8 @@ echo "==> Updating packages..."
 apt-get update -y
 apt-get upgrade -y
  
-echo "==> Installing Java 21, nginx, and git..."
-apt-get install -y openjdk-21-jdk nginx git curl
+echo "==> Installing Java 21, nginx, git, and MySQL..."
+apt-get install -y openjdk-21-jdk nginx git curl mysql-server openssl
  
 echo "==> Creating app directory ${APP_DIR}..."
 mkdir -p "${APP_DIR}"
@@ -30,6 +30,30 @@ if [ ! -f "${ENV_DIR}/app.env" ]; then
 SPRING_PROFILES_ACTIVE=prod
 EOF
 fi
+
+DB_PASSWORD="$(sed -n 's/^SPRING_DATASOURCE_PASSWORD=//p' "${ENV_DIR}/app.env" | tail -n 1)"
+if [ -z "${DB_PASSWORD}" ]; then
+  DB_PASSWORD="$(openssl rand -hex 24)"
+  sed -i '/^SPRING_DATASOURCE_PASSWORD=/d' "${ENV_DIR}/app.env"
+  printf '\nSPRING_DATASOURCE_PASSWORD=%s\n' "${DB_PASSWORD}" >> "${ENV_DIR}/app.env"
+fi
+if ! grep -q '^SPRING_DATASOURCE_URL=' "${ENV_DIR}/app.env"; then
+  printf 'SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/lcg?useSSL=false&serverTimezone=UTC\n' >> "${ENV_DIR}/app.env"
+fi
+if ! grep -q '^SPRING_DATASOURCE_USERNAME=' "${ENV_DIR}/app.env"; then
+  printf 'SPRING_DATASOURCE_USERNAME=lcg_app\n' >> "${ENV_DIR}/app.env"
+fi
+
+echo "==> Creating the application database and restricted local user..."
+systemctl enable --now mysql
+mysql --protocol=socket -uroot <<SQL
+CREATE DATABASE IF NOT EXISTS lcg CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'lcg_app'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+ALTER USER 'lcg_app'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON lcg.* TO 'lcg_app'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+
 chown root:root "${ENV_DIR}/app.env"
 chmod 600 "${ENV_DIR}/app.env"
  

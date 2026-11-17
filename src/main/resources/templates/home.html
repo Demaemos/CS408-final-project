@@ -3,9 +3,10 @@
 <head th:replace="~{fragments/header :: head(title='Home')}"></head>
 <body>
 <nav th:replace="~{fragments/header :: navbar}"></nav>
- 
-<header class="bg-primary text-white text-center py-5">
+
+<header class="bg-primary text-white text-center py-5 home-hero">
     <div class="container">
+        <p class="eyebrow text-white">Independent worlds, made together</p>
         <h1 class="display-4 fw-bold">Loose Cannon Games</h1>
         <p class="lead">Independent studio. Original worlds. Games for everyone.</p>
         <a href="/games" class="btn btn-light btn-lg">See What's Coming</a>
@@ -16,32 +17,42 @@
     <h2 class="mb-4">Coming Soon</h2>
     <p class="text-muted">Our first games are in development &mdash; details and names will be announced as development progresses.</p>
     <div class="row g-4">
-        <div class="col-md-6">
-            <div class="card h-100">
+        <div class="col-md-6" th:each="game : ${featuredGames}">
+            <article class="card h-100 game-card">
+                <img class="card-img-top game-card-art"
+                     th:src="${game.coverImage != null and !#strings.isEmpty(game.coverImage)} ? ${game.coverImage} : @{/images/game-world.svg}"
+                     th:alt="${game.title} + ' artwork'">
                 <div class="card-body">
-                    <h5 class="card-title">Untitled Project One</h5>
-                    <p class="card-text text-muted">Coming soon</p>
-                    <p class="card-text">Details to be revealed.</p>
+                    <p class="eyebrow mb-2" th:text="${game.releaseStatus.label}">In development</p>
+                    <h3 class="h5 card-title" th:text="${game.title}">Game title</h3>
+                    <p class="card-text text-muted" th:text="${game.tagline}">Coming soon</p>
+                    <a class="stretched-link" th:href="@{/games/{slug}(slug=${game.slug})}">Discover the game</a>
                 </div>
-            </div>
+            </article>
         </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Untitled Project Two</h5>
-                    <p class="card-text text-muted">Coming soon</p>
-                    <p class="card-text">Details to be revealed.</p>
-                </div>
-            </div>
-        </div>
+        <p class="text-muted" th:if="${#lists.isEmpty(featuredGames)}">New adventures are in the works.</p>
     </div>
 </section>
- 
+
 <section class="container my-5">
-    <h2 class="mb-4">Latest News</h2>
-    <ul class="list-group">
-        <li class="list-group-item">Welcome to the new Loose Cannon Games site &mdash; more updates soon.</li>
-    </ul>
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div><p class="eyebrow mb-1">Behind the scenes</p><h2 class="mb-0">Latest News</h2></div>
+        <a href="/news" class="btn btn-outline-primary">All news</a>
+    </div>
+    <div class="row g-4">
+        <article class="col-md-4" th:each="post : ${latestNews}">
+            <div class="card h-100">
+                <img class="card-img-top news-card-art" th:if="${post.image != null and !#strings.isEmpty(post.image)}"
+                     th:src="${post.image}" th:alt="${post.title} + ' cover image'">
+                <div class="card-body">
+                    <p class="small text-muted" th:text="${#temporals.format(post.publishedAt, 'MMM d, yyyy')}">Date</p>
+                    <h3 class="h5" th:text="${post.title}">News title</h3>
+                    <a class="stretched-link" th:href="@{/news/{slug}(slug=${post.slug})}">Read update</a>
+                </div>
+            </div>
+        </article>
+        <p class="text-muted" th:if="${#lists.isEmpty(latestNews)}">Studio updates are coming soon.</p>
+    </div>
 </section>
  
 <footer th:replace="~{fragments/footer :: footer}"></footer>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="title desc">
+  <title id="title">An original adventure world</title>
+  <desc id="desc">Soft, colorful hills beneath a ringed planet and a small traveler with a lantern.</desc>
+  <defs>
+    <linearGradient id="dawn" x2="0" y2="1">
+      <stop stop-color="#f6c995"/>
+      <stop offset=".62" stop-color="#f2e4c4"/>
+      <stop offset="1" stop-color="#c5dcd0"/>
+    </linearGradient>
+    <linearGradient id="hill" x2="0" y2="1">
+      <stop stop-color="#86a984"/>
+      <stop offset="1" stop-color="#3d7169"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#dawn)"/>
+  <circle cx="690" cy="155" r="77" fill="#ed6a4e"/>
+  <ellipse cx="690" cy="155" rx="120" ry="31" transform="rotate(-18 690 155)" fill="none" stroke="#fff5dc" stroke-width="12"/>
+  <path d="M0 323c120-93 244-95 355-23 91-116 234-137 342-44 97-70 182-66 263-19v303H0Z" fill="#9ab58c"/>
+  <path d="M0 398c108-76 246-77 367-12 103-80 244-87 367-5 80-57 155-69 226-34v193H0Z" fill="url(#hill)"/>
+  <path d="M0 455c149-35 268-24 387 15 114-47 222-46 331-4 93-33 169-33 242-12v86H0Z" fill="#1d5960"/>
+  <path d="M160 344c69-25 119-18 166 4m126 34c65-25 111-21 154 1m166-4c36-12 69-9 102 2" fill="none" stroke="#dce8ca" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <path d="m285 421 18-40 18 40h-13v23h-10v-23z" fill="#172228"/>
+  <circle cx="303" cy="383" r="8" fill="#ed6a4e"/>
+  <path d="M303 388v-9m-6 7h12" stroke="#fff2bb" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="142" cy="215" r="4" fill="#fffefa"/>
+  <circle cx="215" cy="168" r="3" fill="#fffefa"/>
+  <circle cx="827" cy="275" r="4" fill="#fffefa"/>
+  <path d="M0 510c114-21 194 17 310 0s205-14 319 0 217-11 331 0" fill="none" stroke="#b6d2bf" stroke-width="3" opacity=".7"/>
+</svg>

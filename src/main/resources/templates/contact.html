@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head(title='Contact & Support')}"></head>
+<body>
+<nav th:replace="~{fragments/header :: navbar}"></nav>
+
+<main class="container page-shell">
+    <header class="page-heading">
+        <p class="eyebrow">We’re listening</p>
+        <h1>Contact &amp; Support</h1>
+        <p class="lead">Send our team a note and we’ll keep your request on file.</p>
+    </header>
+
+    <div class="alert alert-success" th:if="${ticketSubmitted}">
+        Your ticket was submitted. Thanks for getting in touch!
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-7">
+            <section class="surface-card p-4 p-md-5">
+                <form th:action="@{/contact}" th:object="${ticketForm}" method="post" novalidate>
+                    <div class="mb-3">
+                        <label for="ticket-name" class="form-label">Name</label>
+                        <input id="ticket-name" class="form-control" th:field="*{name}" th:errorclass="is-invalid"
+                               autocomplete="name" maxlength="120">
+                        <div class="invalid-feedback" th:errors="*{name}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticket-email" class="form-label">Email</label>
+                        <input id="ticket-email" type="email" class="form-control" th:field="*{email}"
+                               th:errorclass="is-invalid" autocomplete="email" maxlength="254">
+                        <div class="invalid-feedback" th:errors="*{email}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticket-topic" class="form-label">Topic</label>
+                        <select id="ticket-topic" class="form-select" th:field="*{topic}" th:errorclass="is-invalid">
+                            <option value="">Choose a topic</option>
+                            <option value="Game support">Game support</option>
+                            <option value="Press and partnerships">Press and partnerships</option>
+                            <option value="Careers">Careers</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{topic}">Error</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticket-game" class="form-label">Related game <span class="text-muted">(optional)</span></label>
+                        <select id="ticket-game" class="form-select" th:field="*{gameId}" th:errorclass="is-invalid">
+                            <option value="">Not about a specific game</option>
+                            <option th:each="game : ${games}" th:value="${game.id}" th:text="${game.title}">Game</option>
+                        </select>
+                        <div class="invalid-feedback" th:errors="*{gameId}">Error</div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="ticket-message" class="form-label">How can we help?</label>
+                        <textarea id="ticket-message" class="form-control" rows="6" th:field="*{message}"
+                                  th:errorclass="is-invalid" maxlength="4000"></textarea>
+                        <div class="invalid-feedback" th:errors="*{message}">Error</div>
+                    </div>
+                    <button class="btn btn-primary btn-lg" type="submit">Send message</button>
+                </form>
+            </section>
+        </div>
+        <aside class="col-lg-5">
+            <div class="contact-art rounded-4 overflow-hidden mb-4">
+                <img src="/images/community-orbit.svg" alt="" class="w-100">
+            </div>
+            <section class="surface-card p-4">
+                <h2 class="h4">A real person will read this</h2>
+                <p class="mb-0">Your request is saved for our support team. Please don’t include passwords or other sensitive account information.</p>
+            </section>
+        </aside>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/footer :: footer}"></footer>
+</body>
+</html>

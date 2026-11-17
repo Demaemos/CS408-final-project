@@ -7,6 +7,7 @@ import com.tylerandrews.lcg.model.Game;
 import com.tylerandrews.lcg.model.JobApplication;
 import com.tylerandrews.lcg.model.JobPosting;
 import com.tylerandrews.lcg.model.NewsPost;
+import com.tylerandrews.lcg.model.SupportTicket;
 import com.tylerandrews.lcg.repository.GameRepository;
 import com.tylerandrews.lcg.repository.JobApplicationRepository;
 import com.tylerandrews.lcg.repository.JobPostingRepository;
@@ -15,7 +16,13 @@ import com.tylerandrews.lcg.service.GameService;
 import com.tylerandrews.lcg.service.JobApplicationService;
 import com.tylerandrews.lcg.service.JobPostingService;
 import com.tylerandrews.lcg.service.NewsPostService;
+import com.tylerandrews.lcg.service.SupportTicketService;
 import jakarta.validation.Valid;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,10 +35,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
 @Controller
 public class AdminController {
 
@@ -43,6 +46,7 @@ public class AdminController {
     private final JobPostingRepository jobPostingRepository;
     private final JobApplicationService jobApplicationService;
     private final JobApplicationRepository jobApplicationRepository;
+    private final SupportTicketService supportTicketService;
 
     public AdminController(GameService gameService,
                           GameRepository gameRepository,
@@ -51,7 +55,8 @@ public class AdminController {
                           JobPostingService jobPostingService,
                           JobPostingRepository jobPostingRepository,
                           JobApplicationService jobApplicationService,
-                          JobApplicationRepository jobApplicationRepository) {
+                          JobApplicationRepository jobApplicationRepository,
+                          SupportTicketService supportTicketService) {
         this.gameService = gameService;
         this.gameRepository = gameRepository;
         this.newsPostService = newsPostService;
@@ -60,10 +65,16 @@ public class AdminController {
         this.jobPostingRepository = jobPostingRepository;
         this.jobApplicationService = jobApplicationService;
         this.jobApplicationRepository = jobApplicationRepository;
+        this.supportTicketService = supportTicketService;
     }
 
     @GetMapping("/admin")
-    public String dashboard(Model model) {
+    public String dashboard(@RequestParam(required = false) SupportTicket.Status ticketStatus,
+                            @RequestParam(required = false) String ticketEmail,
+                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ticketFrom,
+                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ticketThrough,
+                            @RequestParam(defaultValue = "0") int ticketPage,
+                            Model model) {
         model.addAttribute("games", gameService.allGames());
         model.addAttribute("posts", newsPostService.latest(5));
         var jobs = jobPostingService.allJobs();
@@ -71,7 +82,35 @@ public class AdminController {
         model.addAttribute("applicationCounts", jobs.stream().collect(Collectors.toMap(
             JobPosting::getId, jobApplicationService::countByJob)));
         model.addAttribute("applications", jobApplicationService.findAll());
+        model.addAttribute("ticketPage", supportTicketService.search(
+            ticketStatus, ticketEmail, ticketFrom, ticketThrough, ticketPage));
+        model.addAttribute("ticketStatuses", SupportTicket.Status.values());
+        model.addAttribute("selectedTicketStatus", ticketStatus);
+        model.addAttribute("ticketEmail", ticketEmail);
+        model.addAttribute("ticketFrom", ticketFrom);
+        model.addAttribute("ticketThrough", ticketThrough);
         return "admin/dashboard";
+    }
+
+    @PostMapping("/admin/tickets/{id}")
+    public String updateTicket(@PathVariable Long id,
+                               @RequestParam SupportTicket.Status status,
+                               @RequestParam(required = false) String adminNote,
+                               RedirectAttributes redirect) {
+        SupportTicket ticket = supportTicketService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Support ticket not found"));
+        supportTicketService.update(ticket, status, adminNote);
+        redirect.addFlashAttribute("message", "Support ticket updated.");
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/admin/tickets/{id}/delete")
+    public String deleteTicket(@PathVariable Long id, RedirectAttributes redirect) {
+        SupportTicket ticket = supportTicketService.findById(id)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Support ticket not found"));
+        supportTicketService.delete(ticket);
+        redirect.addFlashAttribute("message", "Support ticket deleted.");
+        return "redirect:/admin";
     }
 
     @GetMapping("/admin/games/new")
